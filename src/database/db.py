@@ -17,18 +17,32 @@ class DataBaseConnector:
             logger.error(f"Error de conexión a la base de datos: {e}")
             raise
 
-    def ejecutar_query(self, query, params=None):
-        cursor = self.connection.cursor()
+    def ejecutar_query(self, query, params=None, fetch=True):
+        cursor = self.connection.cursor(dictionary=True)
         try:
             cursor.execute(query, params or ())
-            self.connection.commit()
-            logger.info(f"Consulta ejecutada: {query}")
-            return cursor
+
+            # Si es SELECT
+            if fetch:
+                result = cursor.fetchall()  # leer todos los resultados
+            else:
+                result = None
+                self.connection.commit()  # Solo commit para INSERT/UPDATE/DELETE
+
+            return result
+
         except Error as e:
             logger.error(f"Error ejecutando query: {e}")
             raise
+
         finally:
+            # Asegurarnos de limpiar cualquier resultado pendiente ANTES de cerrar
+            try:
+                cursor.fetchall()
+            except:
+                pass
             cursor.close()
+
 
     def cerrar_conexion(self):
         if self.connection.is_connected():

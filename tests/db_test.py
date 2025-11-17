@@ -1,0 +1,16 @@
+import sys
+import os
+
+# Añadir la raíz del proyecto al path
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from src.database.db import DataBaseConnector
+
+db = DataBaseConnector()
+
+try:
+    resultado = db.ejecutar_query("SELECT DATABASE();")
+    print("Base de datos conectada correctamente:", resultado)
+except Exception as e:
+    print("Error al conectar:", e)

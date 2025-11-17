@@ -1,0 +1,16 @@
+[
+  "tests/cliente_test.py::test_agregar_mascota",
+  "tests/cliente_test.py::test_crear_cliente",
+  "tests/consulta_test.py::test_confirmar_realizacion_consulta",
+  "tests/consulta_test.py::test_crear_consulta",
+  "tests/consulta_test.py::test_registrar_diagnostico",
+  "tests/mascota_test.py::test_agregar_consulta",
+  "tests/mascota_test.py::test_crear_mascota",
+  "tests/personal_test.py::test_asignar_consulta",
+  "tests/personal_test.py::test_crear_personal",
+  "tests/personal_test.py::test_pagar_empleado_aumenta_dinero_cobrado",
+  "tests/saldo_test.py::test_cobrar_consulta_aumenta_saldo",
+  "tests/saldo_test.py::test_consultar_saldo",
+  "tests/saldo_test.py::test_pagar_empleado_disminuye_saldo",
+  "tests/saldo_test.py::test_saldo_inicial"
+]

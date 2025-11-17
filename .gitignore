@@ -1,0 +1,6 @@
+# Created by pytest automatically.
+env/
+__pycache__/
+*.pyc
+logs/
+
