@@ -1,5 +1,6 @@
 import re
 
+#En esta clase guardamos funciones de validación para comprobar que los datos sean correctos
 class Utils:
     @staticmethod
     def validar_dni(dni):
