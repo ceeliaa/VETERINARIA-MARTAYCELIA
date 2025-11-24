@@ -19,7 +19,7 @@ st.title("👨🏻‍💼 Gestión de Clientes")
 
 # 1. FUNCIONES AUXILIARES
 
-
+#Obtenemos los clientes y las mascotas de la base de datos
 def obtener_clientes():
     query = "SELECT * FROM clientes ORDER BY id ASC"
     return db.ejecutar_query(query)
