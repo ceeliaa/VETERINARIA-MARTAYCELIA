@@ -26,6 +26,10 @@ def obtener_mascotas():
     query = "SELECT id, nombre FROM mascotas ORDER BY nombre ASC"
     return db.ejecutar_query(query)
 
+def obtener_empleados():
+    query = "SELECT * FROM empleados ORDER BY id ASC"
+    return db.ejecutar_query(query)
+
 def insertar_consulta(fecha, hora, veterinario, motivo, id_mascota):
     query = """
         INSERT INTO consultas (fecha, hora, veterinario, motivo, id_mascota, consulta_realizada, diagnostico)
@@ -63,7 +67,6 @@ def eliminar_consulta(consulta_id):
 
 
 # 2. LISTADO DE CONSULTAS
-
 st.subheader("📋 Lista de Consultas")
 
 consultas = obtener_consultas()
@@ -71,10 +74,11 @@ st.dataframe(consultas, use_container_width=True)
 
 
 # 3. AÑADIR NUEVA CONSULTA
-
 st.subheader("➕ Añadir Consulta")
 
 mascotas = obtener_mascotas()
+
+#Hay que llamar a obtener_personal()
 veterinarios_posibles = [
     "Dr. García Pérez",
     "Dra. Martínez López",
