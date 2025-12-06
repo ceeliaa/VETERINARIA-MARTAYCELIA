@@ -19,6 +19,12 @@ class Saldo:
             "monto": monto,
             "empleado": empleado
         })
+    def pagar_facturas(self, monto):
+        self.saldo_final-=monto
+        self.operaciones.append({
+            "tipo":"Gasto",
+            "monto":monto
+        })
 
     def consultar_saldo(self):
         return self.saldo_final
