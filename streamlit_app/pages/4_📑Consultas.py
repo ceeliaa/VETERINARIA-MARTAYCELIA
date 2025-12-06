@@ -30,6 +30,7 @@ def obtener_empleados():
     query = "SELECT * FROM empleados ORDER BY id ASC"
     return db.ejecutar_query(query)
 
+
 def insertar_consulta(fecha, hora, veterinario, motivo, id_mascota):
     query = """
         INSERT INTO consultas (fecha, hora, veterinario, motivo, id_mascota, consulta_realizada, diagnostico)
@@ -78,13 +79,17 @@ st.subheader("➕ Añadir Consulta")
 
 mascotas = obtener_mascotas()
 
-#Hay que llamar a obtener_personal()
+empleados = obtener_empleados()
+#A partir de los empleados de la clínica tendría que ver cuales estan disponibles en x horario
+"""
 veterinarios_posibles = [
     "Dr. García Pérez",
     "Dra. Martínez López",
     "Dr. Rodríguez Sánchez",
     "Dra. López Fernández",
 ]
+"""
+
 
 motivos_posibles = [
     "Vacunación",

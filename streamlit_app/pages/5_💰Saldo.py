@@ -22,7 +22,7 @@ def consultar_saldo():
     return db.ejecutar_query(query)
 
 def consultar_historial_operaciones():
-    query = "SELECT operaciones FROM saldo"
+    query = "SELECT s.operaciones FROM saldo"
     return db.ejecutar_query(query)
 
 
