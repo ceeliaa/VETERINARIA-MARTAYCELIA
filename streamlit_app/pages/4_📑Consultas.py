@@ -225,3 +225,8 @@ if len(consultas) > 0:
             st.error(f"Error al eliminar consulta: {e}")
 else:
     st.info("No hay consultas registradas.")
+
+
+# 7. CONSULTAR HISTORIAL MASCOTA
+
+
