@@ -17,3 +17,31 @@ st.title("💰 Gestión del Saldo de la Clínica")
 
 # 1. FUNCIONES AUXILIARES
 
+def consultar_saldo():
+    query = "SELECT saldo_final FROM saldo"
+    return db.ejecutar_query(query)
+
+def consultar_historial_operaciones():
+    query = "SELECT operaciones FROM saldo"
+    return db.ejecutar_query(query)
+
+
+
+# 2. CONSULTAR SALDO ACTUAL
+
+st.subheader("💰 Saldo actual")
+
+saldo = consultar_saldo()
+st.dataframe(saldo, use_container_width=True)
+
+
+# 3. CONSULTAR HISTORIAL DE OPERACIONES
+
+st.subheader("💰 Lista de Operaciones")
+
+operaciones_saldo = consultar_historial_operaciones()
+st.dataframe(operaciones_saldo, use_container_width=True)
+
+
+
+
