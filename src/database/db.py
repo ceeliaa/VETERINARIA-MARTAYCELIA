@@ -12,7 +12,7 @@ class DataBaseConnector:
     Cuando creamos un objeto de esta clase, se conecta automaticamente a MySQL
     Podemos cambiar los parametros que le pasamos al constructor __init__ pero tenemos unos predeterminados ya que serán los que usemos
     """
-    def __init__(self, host="localhost", user="root", password="", database="clinica_veterinaria"):
+    def __init__(self, host="localhost", user="root", password="12345678", database="clinica_veterinaria"):
         try:
             self.connection = mysql.connector.connect(
                 host=host, #Por defecto, la base de datos esta en nuestro ordenador ("localhost")

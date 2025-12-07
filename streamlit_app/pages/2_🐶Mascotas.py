@@ -11,7 +11,7 @@ from src.database.db import DataBaseConnector
 st.set_page_config(page_title="Mascotas", page_icon="🐶")
 
 # Inicializar conexión con la BBDD
-db = DataBaseConnector(password="1234")
+db = DataBaseConnector(password="12345678")
 
 st.title("🐶 Gestión de Mascotas")
 

@@ -1,47 +1,64 @@
 import sys
 import os
 
-# Añadimos la carpeta raíz del proyecto al path
+# Añadir root del proyecto al PATH
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_DIR)
 
 import streamlit as st
 from src.database.db import DataBaseConnector
 
-st.set_page_config(page_title="Saldo", page_icon="💰") #Cambiar el icono que eso ns hacerlo
+# Configuración de página
+st.set_page_config(page_title="Saldo", page_icon="💰")
 
-# Inicializar conexión
-db = DataBaseConnector(password="1234")
+# Conexión con contraseña correcta
+db = DataBaseConnector(password="12345678")
 
 st.title("💰 Gestión del Saldo de la Clínica")
+
 
 # 1. FUNCIONES AUXILIARES
 
 def consultar_saldo():
-    query = "SELECT saldo_final FROM saldo"
-    return db.ejecutar_query(query)
-
-def consultar_historial_operaciones():
-    query = "SELECT s.operaciones FROM saldo"
-    return db.ejecutar_query(query)
-
+    query = "SELECT cantidad FROM saldo WHERE id = 1"
+    result = db.ejecutar_query(query, fetch=True)
+    if result:
+        return result[0][0]
+    return 0
 
 
-# 2. CONSULTAR SALDO ACTUAL
+def actualizar_saldo(nueva_cantidad):
+    query = "UPDATE saldo SET cantidad = %s WHERE id = 1"
+    db.ejecutar_query(query, (nueva_cantidad,), fetch=False)
+
+
+# 2. MOSTRAR SALDO ACTUAL
 
 st.subheader("💰 Saldo actual")
 
-saldo = consultar_saldo()
-st.dataframe(saldo, use_container_width=True)
+saldo_actual = consultar_saldo()
+st.metric("Saldo disponible", f"{saldo_actual:.2f} €")
 
 
-# 3. CONSULTAR HISTORIAL DE OPERACIONES
+# 3. OPERACIONES MANUALES (COBRAR / PAGAR)
 
-st.subheader("💰 Lista de Operaciones")
+st.subheader("💵 Cobrar a un cliente")
 
-operaciones_saldo = consultar_historial_operaciones()
-st.dataframe(operaciones_saldo, use_container_width=True)
+monto_cobrar = st.number_input("Cantidad a cobrar (€)", min_value=0.0, step=1.0)
+
+if st.button("Cobrar"):
+    nuevo_saldo = saldo_actual + monto_cobrar
+    actualizar_saldo(nuevo_saldo)
+    st.success("💵 Cobro registrado correctamente.")
+    st.rerun()
 
 
+st.subheader("👨‍⚕️ Pagar a un empleado")
 
+monto_pagar = st.number_input("Cantidad a pagar (€)", min_value=0.0, step=1.0)
 
+if st.button("Pagar"):
+    nuevo_saldo = saldo_actual - monto_pagar
+    actualizar_saldo(nuevo_saldo)
+    st.success("👨‍⚕️ Pago registrado correctamente.")
+    st.rerun()

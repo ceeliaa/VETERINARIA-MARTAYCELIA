@@ -4,7 +4,7 @@ from src.database.base import Base
 
 
 # URL base de datos
-DATABASE_URL = "mysql+pymysql://root:1234@localhost/clinica_veterinaria"
+DATABASE_URL = "mysql+pymysql://root:12345678@localhost/clinica_veterinaria"
 
 # Crear engine
 engine = create_engine(
