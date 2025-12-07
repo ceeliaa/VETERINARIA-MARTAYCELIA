@@ -8,12 +8,20 @@ sys.path.append(ROOT_DIR)
 import streamlit as st
 from src.database.db import DataBaseConnector
 
+
 st.set_page_config(page_title="Mascotas", page_icon="🐶")
 
 # Inicializar conexión con la BBDD
 db = DataBaseConnector(password="12345678")
 
-st.title("🐶 Gestión de Mascotas")
+
+st.markdown("""
+    <h1 style='text-align: center; color: #4A4A4A;'>
+        🐶 Gestión de Mascotas
+    </h1>
+    <hr style='margin-top:10px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
+
 
 
 # 1. FUNCIONES AUXILIARES

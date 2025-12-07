@@ -14,7 +14,13 @@ st.set_page_config(page_title="Saldo", page_icon="💰")
 # Conexión con contraseña correcta
 db = DataBaseConnector(password="12345678")
 
-st.title("💰 Gestión del Saldo de la Clínica")
+
+st.markdown("""
+    <h1 style='text-align: center; color: #4A4A4A;'>
+        💰 Gestión del Saldo de la Clínica
+    </h1>
+    <hr style='margin-top:10px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
 
 
 # 1. FUNCIONES AUXILIARES

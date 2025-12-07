@@ -12,7 +12,13 @@ from src.database.orm.mascota_orm import MascotaORM
 
 st.set_page_config(page_title="Clientes", page_icon="👨🏻‍💼")
 
-st.title("👨🏻‍💼 Gestión de Clientes")
+
+st.markdown("""
+    <h1 style='text-align: center; color: #4A4A4A;'>
+        👨🏻‍💼 Gestión de Clientes
+    </h1>
+    <hr style='margin-top:10px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
 
 # 1. Inicializar sesión con la bbdd
 # 
