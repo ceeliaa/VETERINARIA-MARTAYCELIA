@@ -8,9 +8,18 @@ sys.path.append(ROOT_DIR)
 import streamlit as st
 from src.database.db import DataBaseConnector
 
+
+# --------------------------------------------------
+# CONFIGURACIÓN PÁGINA
+# --------------------------------------------------
+
 st.set_page_config(page_title="Citas", page_icon="📑")
 
-# Diseño de la página
+
+# --------------------------------------------------
+# ESTILOS (CSS)
+# --------------------------------------------------
+
 st.markdown("""
 <style>
 
@@ -27,15 +36,6 @@ st.markdown("""
     h2, h3, h4 {
         color: #444444 !important;
         font-weight: 600 !important;
-    }
-
-    .stContainer {
-        background-color: white !important;
-        padding: 20px !important;
-        border-radius: 15px !important;
-        border: 2px solid #FFB7CE !important;
-        box-shadow: 1px 1px 10px #dfdfdf;
-        margin-bottom: 25px !important;
     }
 
     div.stButton > button {
@@ -66,18 +66,54 @@ st.markdown("""
 
 
 
-# Inicializar conexión
+# --------------------------------------------------
+# PINK BOX COMPONENT — RECUADRO DECORATIVO
+# --------------------------------------------------
+
+def pink_box(title):
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#FFE6EB;
+            padding:18px;
+            padding-left:25px;
+            border-radius:14px;
+            border:2px solid #FFB6C9;
+            box-shadow:0 4px 12px rgba(255, 182, 201, 0.4);
+            font-weight:600;
+            font-size:20px;
+            margin-top:20px;
+            margin-bottom:20px;">
+            {title}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
+# --------------------------------------------------
+# CONEXIÓN A LA BASE DE DATOS
+# --------------------------------------------------
+
 db = DataBaseConnector(password="12345678")
 
 
-# TÍTULO
+
+# --------------------------------------------------
+# TÍTULO PRINCIPAL
+# --------------------------------------------------
+
 st.markdown("""
     <h1>📑 Gestión de Citas de la Clínica</h1>
-    <hr style='margin-top:10px; margin-bottom:20px;'>
+    <hr style='margin-top:5px; margin-bottom:20px;'>
 """, unsafe_allow_html=True)
 
 
-# 1. FUNCIONES AUXILIARES 
+
+# --------------------------------------------------
+# FUNCIONES AUXILIARES
+# --------------------------------------------------
 
 def obtener_citas():
     query = "SELECT * FROM citas ORDER BY fecha DESC"
@@ -111,24 +147,29 @@ def eliminar_cita(cita_id):
     db.ejecutar_query(query, (cita_id,), fetch=False)
 
 
-# 2. LISTADO DE CITAS
 
-citas = obtener_citas()  # IMPORTANTE: primero obtener datos
+# --------------------------------------------------
+# 1. LISTA DE CITAS
+# --------------------------------------------------
 
-with st.container():
-    st.markdown("<div class='stContainer'>", unsafe_allow_html=True)
-    st.subheader("📋 Lista de Citas")
-    st.dataframe(citas, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+citas = obtener_citas()
+
+pink_box("📋 Lista de Citas")
+
+st.dataframe(citas, use_container_width=True)
 
 
 
-# 3. AÑADIR CITA
+# --------------------------------------------------
+# 2. AÑADIR UNA NUEVA CITA
+# --------------------------------------------------
+
 mascotas = obtener_mascotas()
 empleados = obtener_empleados()
 
 motivos_posibles = [
     "Vacunación",
+    "Vacuna antirrábica",
     "Revisión general",
     "Desparasitación",
     "Consulta dermatológica",
@@ -139,118 +180,115 @@ motivos_posibles = [
     "Otro"
 ]
 
+
 estados_posibles = ["Pendiente", "Realizada", "Cancelada"]
 
+pink_box("➕ Añadir Cita 🐶💉")
 
-with st.container():
-    st.markdown("<div class='stContainer'>", unsafe_allow_html=True)
-    st.subheader("➕ Añadir Cita 🐶💉")
+with st.form("form_anadir_cita"):
 
-    with st.form("form_anadir_cita"):
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fecha = st.date_input("Fecha")
+        hora = st.time_input("Hora")
+        motivo = st.selectbox("Motivo", motivos_posibles)
+
+    with col2:
+        mascota_dict = {f"{m['id']} - {m['nombre']}": m["id"] for m in mascotas}
+        mascota_sel = st.selectbox("Mascota", list(mascota_dict.keys()))
+        mascota_id = mascota_dict[mascota_sel]
+
+        empleado_dict = {f"{e['id']} - {e['nombre']} {e['apellidos']}": e["id"] for e in empleados}
+        empleado_sel = st.selectbox("Veterinario", list(empleado_dict.keys()))
+        empleado_id = empleado_dict[empleado_sel]
+
+        estado = st.selectbox("Estado", estados_posibles)
+
+    if st.form_submit_button("Añadir Cita"):
+        fecha_completa = f"{fecha} {hora}"
+        try:
+            insertar_cita(fecha_completa, motivo, mascota_id, empleado_id, estado)
+            st.success("Cita añadida correctamente 🩷")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+
+
+# --------------------------------------------------
+# 3. EDITAR CITA
+# --------------------------------------------------
+
+pink_box("✏️ Editar Cita")
+
+if len(citas) > 0:
+
+    lista_citas = {
+        f"{c['id']} - {c['fecha']} - {c['motivo']}": c for c in citas
+    }
+
+    cita_key = st.selectbox("Selecciona una cita", list(lista_citas.keys()))
+    cita_sel = lista_citas[cita_key]
+
+    with st.form("form_editar_cita"):
 
         col1, col2 = st.columns(2)
 
         with col1:
-            fecha = st.date_input("Fecha")
-            hora = st.time_input("Hora")
-            motivo = st.selectbox("Motivo", motivos_posibles)
+            fecha_original = str(cita_sel["fecha"]).split(" ")[0]
+            hora_original = str(cita_sel["fecha"]).split(" ")[1]
+
+            nueva_fecha = st.date_input("Fecha", value=fecha_original)
+            nueva_hora = st.time_input("Hora", value=hora_original)
+            motivo_actual = cita_sel["motivo"]
+            index_motivo = motivos_posibles.index(motivo_actual) if motivo_actual in motivos_posibles else 0
+
+            nuevo_motivo = st.selectbox("Motivo", motivos_posibles, index=index_motivo)
+
 
         with col2:
             mascota_dict = {f"{m['id']} - {m['nombre']}": m["id"] for m in mascotas}
-            mascota_sel = st.selectbox("Mascota", list(mascota_dict.keys()))
-            mascota_id = mascota_dict[mascota_sel]
+            mascota_edit = st.selectbox("Mascota", list(mascota_dict.keys()))
+            nueva_mascota_id = mascota_dict[mascota_edit]
 
             empleado_dict = {f"{e['id']} - {e['nombre']} {e['apellidos']}": e["id"] for e in empleados}
-            empleado_sel = st.selectbox("Veterinario", list(empleado_dict.keys()))
-            empleado_id = empleado_dict[empleado_sel]
+            empleado_edit = st.selectbox("Veterinario", list(empleado_dict.keys()))
+            nuevo_empleado_id = empleado_dict[empleado_edit]
 
-            estado = st.selectbox("Estado", estados_posibles)
+            nuevo_estado = st.selectbox("Estado", estados_posibles,
+                                        index=estados_posibles.index(cita_sel["estado"]))
 
-        submit = st.form_submit_button("Añadir Cita")
-
-        if submit:
-            fecha_completa = f"{fecha} {hora}"
+        if st.form_submit_button("Guardar cambios"):
+            nueva_fecha_completa = f"{nueva_fecha} {nueva_hora}"
             try:
-                insertar_cita(fecha_completa, motivo, mascota_id, empleado_id, estado)
-                st.success("Cita añadida correctamente 🩷")
+                actualizar_cita(
+                    cita_sel["id"], nueva_fecha_completa, nuevo_motivo,
+                    nueva_mascota_id, nuevo_empleado_id, nuevo_estado
+                )
+                st.success("Cita actualizada correctamente 💚")
                 st.rerun()
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+else:
+    st.info("No hay citas registradas.")
 
-# 4. EDITAR CITA
 
-with st.container():
-    st.markdown("<div class='stContainer'>", unsafe_allow_html=True)
-    st.subheader("✏️ Editar Cita")
 
-    if len(citas) > 0:
+# --------------------------------------------------
+# 4. ELIMINAR CITA
+# --------------------------------------------------
 
-        lista_citas = {
-            f"{c['id']} - {c['fecha']} - {c['motivo']}": c for c in citas
-        }
+pink_box("🗑️ Eliminar Cita")
 
-        cita_key = st.selectbox("Selecciona una cita", list(lista_citas.keys()))
-        cita_sel = lista_citas[cita_key]
-
-        with st.form("form_editar_cita"):
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                fecha_original = str(cita_sel["fecha"]).split(" ")[0]
-                hora_original = str(cita_sel["fecha"]).split(" ")[1]
-
-                nueva_fecha = st.date_input("Fecha", value=fecha_original)
-                nueva_hora = st.time_input("Hora", value=hora_original)
-                nuevo_motivo = st.selectbox("Motivo", motivos_posibles)
-
-            with col2:
-                mascota_dict = {f"{m['id']} - {m['nombre']}": m["id"] for m in mascotas}
-                mascota_edit = st.selectbox("Mascota", list(mascota_dict.keys()))
-                nueva_mascota_id = mascota_dict[mascota_edit]
-
-                empleado_dict = {f"{e['id']} - {e['nombre']} {e['apellidos']}": e["id"] for e in empleados}
-                empleado_edit = st.selectbox("Veterinario", list(empleado_dict.keys()))
-                nuevo_empleado_id = empleado_dict[empleado_edit]
-
-                nuevo_estado = st.selectbox("Estado", estados_posibles)
-
-            submit_edit = st.form_submit_button("Guardar cambios")
-
-            if submit_edit:
-                nueva_fecha_completa = f"{nueva_fecha} {nueva_hora}"
-                try:
-                    actualizar_cita(
-                        cita_sel["id"], nueva_fecha_completa, nuevo_motivo,
-                        nueva_mascota_id, nuevo_empleado_id, nuevo_estado
-                    )
-                    st.success("Cita actualizada correctamente 💚")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {e}")
-
-    else:
-        st.info("No hay citas registradas.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
- # 5. ELIMINAR CITA
-
-with st.container():
-    st.markdown("<div class='stContainer'>", unsafe_allow_html=True)
-    st.subheader("🗑️ Eliminar Cita")
-
-    if len(citas) > 0:
-        if st.button("Eliminar cita seleccionada"):
-            try:
-                eliminar_cita(cita_sel["id"])
-                st.success("Cita eliminada correctamente ❌")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error: {e}")
-    else:
-        st.info("No hay citas para eliminar.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+if len(citas) > 0:
+    if st.button("Eliminar cita seleccionada"):
+        try:
+            eliminar_cita(cita_sel["id"])
+            st.success("Cita eliminada correctamente ❌")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error: {e}")
+else:
+    st.info("No hay citas para eliminar.")
