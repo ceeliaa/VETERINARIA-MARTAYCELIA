@@ -12,5 +12,10 @@
   "tests/saldo_test.py::test_cobrar_consulta_aumenta_saldo",
   "tests/saldo_test.py::test_consultar_saldo",
   "tests/saldo_test.py::test_pagar_empleado_disminuye_saldo",
-  "tests/saldo_test.py::test_saldo_inicial"
+  "tests/saldo_test.py::test_saldo_inicial",
+  "tests/test_orm.py::test_crear_cita",
+  "tests/test_orm.py::test_crear_cliente_orm",
+  "tests/test_orm.py::test_crear_empleado_orm",
+  "tests/test_orm.py::test_crear_mascota_con_cliente",
+  "tests/test_sqlalchemy.py::test_connection"
 ]

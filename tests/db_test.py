@@ -7,7 +7,7 @@ sys.path.insert(0, ROOT)
 
 from src.database.db import DataBaseConnector
 
-db = DataBaseConnector()
+db = DataBaseConnector(password="1234")
 
 try:
     resultado = db.ejecutar_query("SELECT DATABASE();")
