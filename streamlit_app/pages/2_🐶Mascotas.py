@@ -9,27 +9,116 @@ import streamlit as st
 from src.database.db import DataBaseConnector
 
 
+# --------------------------------------------------
+# CONFIGURACIÓN PÁGINA
+# --------------------------------------------------
+
 st.set_page_config(page_title="Mascotas", page_icon="🐶")
 
-# Inicializar conexión con la BBDD
-db = DataBaseConnector(password="12345678")
 
+# --------------------------------------------------
+# ESTILOS (CSS)
+# --------------------------------------------------
 
 st.markdown("""
-    <h1 style='text-align: center; color: #4A4A4A;'>
-        🐶 Gestión de Mascotas
-    </h1>
-    <hr style='margin-top:10px; margin-bottom:20px;'>
+<style>
+
+    .main {
+        background-color: #FFF9FB;
+    }
+
+    h1 {
+        color: #4A4A4A !important;
+        text-align: center !important;
+        font-weight: 700 !important;
+    }
+
+    h2, h3, h4 {
+        color: #4A4A4A !important;
+        font-weight: 600 !important;
+    }
+
+    div.stButton > button {
+        background-color: #FFB7CE !important;
+        color: black !important;
+        border-radius: 12px !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: #FFC7DA !important;
+        color: black !important;
+    }
+
+    /* Inputs y selects */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div,
+    .stDateInput > div > div > input {
+        border-radius: 10px !important;
+        border: 2px solid #FFB7CE !important;
+    }
+
+</style>
 """, unsafe_allow_html=True)
 
 
 
-# 1. FUNCIONES AUXILIARES
+# --------------------------------------------------
+# PINK BOX COMPONENT
+# --------------------------------------------------
 
+def pink_box(title):
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#FFE6EB;
+            padding:18px;
+            padding-left:25px;
+            border-radius:14px;
+            border:2px solid #FFB6C9;
+            box-shadow:0 4px 12px rgba(255, 182, 201, 0.4);
+            font-weight:600;
+            font-size:20px;
+            margin-top:20px;
+            margin-bottom:20px;">
+            {title}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
+# --------------------------------------------------
+# CONEXIÓN A LA BBDD
+# --------------------------------------------------
+
+db = DataBaseConnector(password="12345678")
+
+
+
+# --------------------------------------------------
+# TÍTULO PRINCIPAL
+# --------------------------------------------------
+
+st.markdown("""
+    <h1>🐶 Gestión de Mascotas</h1>
+    <hr style='margin-top:5px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
+
+
+
+# --------------------------------------------------
+# FUNCIONES AUXILIARES
+# --------------------------------------------------
 
 def obtener_mascotas():
     query = """
-        SELECT m.id, m.nombre, m.especie, m.raza, c.nombre AS dueño, c.id AS cliente_id 
+        SELECT m.id, m.nombre, m.especie, m.raza,
+               c.nombre AS dueño, c.apellidos AS apellidos_dueño, c.id AS cliente_id
         FROM mascotas m
         JOIN clientes c ON m.cliente_id = c.id
         ORDER BY m.id ASC
@@ -61,22 +150,28 @@ def eliminar_mascota(mascota_id):
 
 
 
-# 2. LISTADO DE MASCOTAS
+# --------------------------------------------------
+# 1. LISTA DE MASCOTAS
+# --------------------------------------------------
 
-st.subheader("📋 Lista de Mascotas")
+pink_box("📋 Lista de Mascotas")
 
 mascotas = obtener_mascotas()
 st.dataframe(mascotas, use_container_width=True)
 
 
-# 3. AÑADIR NUEVA MASCOTA
 
-st.subheader("➕ Añadir Mascota")
+# --------------------------------------------------
+# 2. AÑADIR MASCOTA
+# --------------------------------------------------
+
+pink_box("➕ Añadir Mascota")
 
 clientes = obtener_clientes()
 dic_clientes = {f"{c['id']} - {c['nombre']} {c['apellidos']}": c['id'] for c in clientes}
 
 with st.form("form_anadir_mascota"):
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -87,68 +182,69 @@ with st.form("form_anadir_mascota"):
         raza = st.text_input("Raza")
         cliente_seleccionado = st.selectbox("Dueño", list(dic_clientes.keys()))
 
-    submitted = st.form_submit_button("Añadir")
-
-    if submitted:
+    if st.form_submit_button("Añadir Mascota"):
         try:
-            insertar_mascota(
-                nombre,
-                especie,
-                raza,
-                dic_clientes[cliente_seleccionado]
-            )
-            st.success("Mascota añadida correctamente.")
+            insertar_mascota(nombre, especie, raza, dic_clientes[cliente_seleccionado])
+            st.success("Mascota añadida correctamente 🩷")
             st.rerun()
         except Exception as e:
             st.error(f"Error al añadir mascota: {e}")
 
 
-# 4. EDITAR MASCOTA
 
-st.subheader("✏️ Editar Mascota")
+# --------------------------------------------------
+# 3. EDITAR MASCOTA
+# --------------------------------------------------
 
-# Crear mapa id → mascota
+pink_box("✏️ Editar Mascota")
+
 mapa_mascotas = {f"{m['id']} - {m['nombre']} ({m['especie']})": m for m in mascotas}
 
 mascota_key = st.selectbox("Selecciona una mascota", list(mapa_mascotas.keys()))
 mascota_sel = mapa_mascotas[mascota_key]
 
 with st.form("form_editar_mascota"):
+
     col1, col2 = st.columns(2)
 
     with col1:
         nuevo_nombre = st.text_input("Nombre", mascota_sel["nombre"])
-        nueva_especie = st.selectbox("Especie", ["Perro", "Gato", "Conejo", "Tortuga", "Hámster", "Hurón"], index=["Perro", "Gato", "Conejo", "Tortuga", "Hámster", "Hurón"].index(mascota_sel["especie"]))
+        nueva_especie = st.selectbox(
+            "Especie",
+            ["Perro", "Gato", "Conejo", "Tortuga", "Hámster", "Hurón"],
+            index=["Perro", "Gato", "Conejo", "Tortuga", "Hámster", "Hurón"].index(mascota_sel["especie"])
+        )
 
     with col2:
         nueva_raza = st.text_input("Raza", mascota_sel["raza"])
         nuevo_duenio = st.selectbox("Dueño", list(dic_clientes.keys()))
 
-    submitted_edit = st.form_submit_button("Guardar cambios")
-
-    if submitted_edit:
+    if st.form_submit_button("Guardar cambios"):
         try:
             actualizar_mascota(
                 mascota_sel["id"],
                 nuevo_nombre,
                 nueva_especie,
                 nueva_raza,
-                dic_clientes[nuevo_duenio],
+                dic_clientes[nuevo_duenio]
             )
-            st.success("Mascota actualizada correctamente.")
+            st.success("Mascota actualizada correctamente 💚")
             st.rerun()
         except Exception as e:
             st.error(f"Error al actualizar mascota: {e}")
 
 
-# 5. ELIMINAR MASCOTA
 
-st.subheader("🗑️ Eliminar Mascota")
+# --------------------------------------------------
+# 4. ELIMINAR MASCOTA
+# --------------------------------------------------
+
+pink_box("🗑️ Eliminar Mascota")
 
 if st.button("Eliminar mascota seleccionada"):
     try:
         eliminar_mascota(mascota_sel["id"])
-        st.success("Mascota eliminada correctamente.")
+        st.success("Mascota eliminada correctamente ❌")
         st.rerun()
     except Exception as e:
         st.error(f"Error al eliminar mascota: {e}")

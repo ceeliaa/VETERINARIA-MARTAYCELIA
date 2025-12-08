@@ -1,84 +1,169 @@
 import sys
 import os
-import streamlit as st
 
-# Añadimos la ruta raíz para que Python encuentre src/
+# Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_DIR)
 
-from src.database.sqlalchemy_connector import SessionLocal
-from src.database.orm.cliente_orm import ClienteORM
-from src.database.orm.mascota_orm import MascotaORM
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from src.database.db import DataBaseConnector
 
-st.set_page_config(page_title="Clientes", page_icon="👨🏻‍💼")
 
+# --------------------------------------------------
+# CONFIGURACIÓN PÁGINA
+# --------------------------------------------------
+
+st.set_page_config(page_title="Clientes", page_icon="🧍‍♂️")
+
+
+# --------------------------------------------------
+# ESTILOS (CSS)
+# --------------------------------------------------
 
 st.markdown("""
-    <h1 style='text-align: center; color: #4A4A4A;'>
-        👨🏻‍💼 Gestión de Clientes
-    </h1>
-    <hr style='margin-top:10px; margin-bottom:20px;'>
+<style>
+
+    .main {
+        background-color: #FFF9FB;
+    }
+
+    h1 {
+        color: #4A4A4A !important;
+        text-align: center !important;
+        font-weight: 700 !important;
+    }
+
+    h2, h3, h4 {
+        color: #4A4A4A !important;
+        font-weight: 600 !important;
+    }
+
+    div.stButton > button {
+        background-color: #FFB7CE !important;
+        color: black !important;
+        border-radius: 12px !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: #FFC7DA !important;
+        color: black !important;
+    }
+
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div,
+    .stDateInput > div > div > input {
+        border-radius: 10px !important;
+        border: 2px solid #FFB7CE !important;
+    }
+
+</style>
 """, unsafe_allow_html=True)
 
-# 1. Inicializar sesión con la bbdd
-# 
-db = SessionLocal()
 
 
-# 2. Funciones ORM (así funcionan con SQLAlchemy)
+# --------------------------------------------------
+# PINK BOX COMPONENT
+# --------------------------------------------------
+
+def pink_box(title):
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#FFE6EB;
+            padding:18px;
+            padding-left:25px;
+            border-radius:14px;
+            border:2px solid #FFB6C9;
+            box-shadow:0 4px 12px rgba(255, 182, 201, 0.4);
+            font-weight:600;
+            font-size:20px;
+            margin-top:20px;
+            margin-bottom:20px;">
+            {title}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
+# --------------------------------------------------
+# CONEXIÓN A LA BBDD
+# --------------------------------------------------
+
+db = DataBaseConnector(password="12345678")
+
+
+
+# --------------------------------------------------
+# TÍTULO PRINCIPAL
+# --------------------------------------------------
+
+st.markdown("""
+    <h1>🧍‍♂️ Gestión de Clientes</h1>
+    <hr style='margin-top:5px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
+
+
+
+# --------------------------------------------------
+# FUNCIONES AUXILIARES
+# --------------------------------------------------
+
 def obtener_clientes():
-    return db.query(ClienteORM).order_by(ClienteORM.id.asc()).all()
-
-def obtener_mascotas_de_cliente(cliente_id):
-    return db.query(MascotaORM).filter(MascotaORM.cliente_id == cliente_id).all()
+    query = """
+        SELECT id, nombre, apellidos, dni, telefono, correo, fecha_registro
+        FROM clientes
+        ORDER BY id ASC
+    """
+    return db.ejecutar_query(query)
 
 def insertar_cliente(nombre, apellidos, dni, telefono, correo):
-    nuevo = ClienteORM(
-        nombre=nombre,
-        apellidos=apellidos,
-        dni=dni,
-        telefono=telefono,
-        correo=correo
-    )
-    db.add(nuevo)
-    db.commit()
+    query = """
+        INSERT INTO clientes (nombre, apellidos, dni, telefono, correo, fecha_registro)
+        VALUES (%s, %s, %s, %s, %s, NOW())
+    """
+    db.ejecutar_query(query, (nombre, apellidos, dni, telefono, correo), fetch=False)
 
 def actualizar_cliente(cliente_id, nombre, apellidos, dni, telefono, correo):
-    cliente = db.query(ClienteORM).filter(ClienteORM.id == cliente_id).first()
-    if cliente:
-        cliente.nombre = nombre
-        cliente.apellidos = apellidos
-        cliente.dni = dni
-        cliente.telefono = telefono
-        cliente.correo = correo
-        db.commit()
+    query = """
+        UPDATE clientes
+        SET nombre=%s, apellidos=%s, dni=%s, telefono=%s, correo=%s
+        WHERE id=%s
+    """
+    db.ejecutar_query(query, (nombre, apellidos, dni, telefono, correo, cliente_id), fetch=False)
 
 def eliminar_cliente(cliente_id):
-    cliente = db.query(ClienteORM).filter(ClienteORM.id == cliente_id).first()
-    if cliente:
-        db.delete(cliente)
-        db.commit()
+    query = "DELETE FROM clientes WHERE id=%s"
+    db.ejecutar_query(query, (cliente_id,), fetch=False)
 
 
-# 3. Mostrar clientes
+
+# --------------------------------------------------
+# 1. LISTA DE CLIENTES
+# --------------------------------------------------
+
+pink_box("📋 Lista de Clientes")
+
 clientes = obtener_clientes()
-st.subheader("📋 Lista de Clientes")
-
-if clientes:
-    st.dataframe(
-        [{"ID": c.id, "Nombre": c.nombre, "Apellidos": c.apellidos,
-          "DNI": c.dni, "Teléfono": c.telefono, "Correo": c.correo}
-         for c in clientes],
-        use_container_width=True,
-    )
-else:
-    st.info("No hay clientes en la base de datos.")
+st.dataframe(clientes, use_container_width=True)
 
 
-# 4. Añadir Cliente
-st.subheader("➕ Añadir Cliente")
+
+# --------------------------------------------------
+# 2. AÑADIR CLIENTE
+# --------------------------------------------------
+
+pink_box("➕ Añadir Cliente")
 
 with st.form("form_anadir_cliente"):
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -88,94 +173,131 @@ with st.form("form_anadir_cliente"):
 
     with col2:
         telefono = st.text_input("Teléfono")
-        correo = st.text_input("Correo")
+        correo = st.text_input("Correo electrónico")
 
-    submitted = st.form_submit_button("Añadir")
-
-    if submitted:
-        if nombre and apellidos and dni and telefono and correo:
-            try:
-                insertar_cliente(nombre, apellidos, dni, telefono, correo)
-                st.success("Cliente añadido correctamente.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al añadir: {e}")
-        else:
-            st.warning("Completa todos los campos.")
-
-
-# 5. Editar Cliente
-st.subheader("✏️ Editar Cliente")
-
-if not clientes:
-    st.warning("No hay clientes para editar.")
-else:
-    opciones = {f"{c.id} - {c.nombre} {c.apellidos}": c for c in clientes}
-
-    seleccion = st.selectbox("Selecciona un cliente", list(opciones.keys()))
-    cliente_sel = opciones[seleccion]
-
-    with st.form("form_editar_cliente"):
-        col1, col2 = st.columns(2)
-
-        with col1:
-            nuevo_nombre = st.text_input("Nombre", cliente_sel.nombre)
-            nuevos_apellidos = st.text_input("Apellidos", cliente_sel.apellidos)
-            nuevo_dni = st.text_input("DNI", cliente_sel.dni)
-
-        with col2:
-            nuevo_telefono = st.text_input("Teléfono", cliente_sel.telefono)
-            nuevo_correo = st.text_input("Correo", cliente_sel.correo)
-
-        submitted_edit = st.form_submit_button("Guardar Cambios")
-
-        if submitted_edit:
-            try:
-                actualizar_cliente(
-                    cliente_sel.id,
-                    nuevo_nombre,
-                    nuevos_apellidos,
-                    nuevo_dni,
-                    nuevo_telefono,
-                    nuevo_correo,
-                )
-                st.success("Cliente actualizado correctamente.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al editar: {e}")
-
-
-# 6. Ver Mascotas del Cliente
-st.subheader("🐾 Mascotas del Cliente")
-
-if clientes:
-    mascotas = obtener_mascotas_de_cliente(cliente_sel.id)
-
-    if mascotas:
-        st.table(
-            [{
-                "ID": m.id,
-                "Nombre": m.nombre,
-                "Especie": m.especie,
-                "Raza": m.raza,
-                "Sexo": m.sexo,
-                "Edad": m.edad,
-                "Estado": m.estado_salud
-            } for m in mascotas]
-        )
-    else:
-        st.info("Este cliente no tiene mascotas registradas.")
-
-
-# 7. Eliminar Cliente
-
-st.subheader("🗑️ Eliminar Cliente")
-
-if clientes:
-    if st.button("Eliminar cliente seleccionado"):
+    if st.form_submit_button("Añadir Cliente"):
         try:
-            eliminar_cliente(cliente_sel.id)
-            st.success("Cliente eliminado correctamente.")
+            insertar_cliente(nombre, apellidos, dni, telefono, correo)
+            st.success("Cliente añadido correctamente 🩷")
             st.rerun()
         except Exception as e:
-            st.error(f"Error al eliminar: {e}")
+            st.error(f"Error al añadir cliente: {e}")
+
+
+
+# --------------------------------------------------
+# 3. EDITAR CLIENTE
+# --------------------------------------------------
+
+pink_box("✏️ Editar Cliente")
+
+mapa_clientes = {f"{c['id']} - {c['nombre']} {c['apellidos']}": c for c in clientes}
+
+cliente_key = st.selectbox("Selecciona un cliente", list(mapa_clientes.keys()))
+cliente_sel = mapa_clientes[cliente_key]
+
+with st.form("form_editar_cliente"):
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        nuevo_nombre = st.text_input("Nombre", cliente_sel["nombre"])
+        nuevos_apellidos = st.text_input("Apellidos", cliente_sel["apellidos"])
+        nuevo_dni = st.text_input("DNI", cliente_sel["dni"])
+
+    with col2:
+        nuevo_telefono = st.text_input("Teléfono", cliente_sel["telefono"])
+        nuevo_correo = st.text_input("Correo", cliente_sel["correo"])
+
+    if st.form_submit_button("Guardar Cambios"):
+        try:
+            actualizar_cliente(
+                cliente_sel["id"],
+                nuevo_nombre,
+                nuevos_apellidos,
+                nuevo_dni,
+                nuevo_telefono,
+                nuevo_correo
+            )
+            st.success("Cliente actualizado correctamente 💚")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error al actualizar cliente: {e}")
+
+
+
+# --------------------------------------------------
+# 4. ELIMINAR CLIENTE
+# --------------------------------------------------
+
+pink_box("🗑️ Eliminar Cliente")
+
+if st.button("Eliminar cliente seleccionado"):
+    try:
+        eliminar_cliente(cliente_sel["id"])
+        st.success("Cliente eliminado correctamente ❌")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Error al eliminar cliente: {e}")
+
+
+
+# --------------------------------------------------
+# 5. GRÁFICO — Mascotas por Cliente
+# --------------------------------------------------
+
+pink_box("📊 Número de Mascotas por Cliente")
+
+query_mascotas = """
+    SELECT c.nombre, c.apellidos, COUNT(m.id) AS num_mascotas
+    FROM clientes c
+    LEFT JOIN mascotas m ON c.id = m.cliente_id
+    GROUP BY c.id
+    ORDER BY num_mascotas DESC;
+"""
+
+datos_mascotas = db.ejecutar_query(query_mascotas)
+df_mascotas = pd.DataFrame(datos_mascotas)
+
+fig1 = px.bar(
+    df_mascotas,
+    x="nombre",
+    y="num_mascotas",
+    color="num_mascotas",
+    color_continuous_scale=px.colors.sequential.Pinkyl,
+    text="num_mascotas",
+    title="Mascotas por Cliente"
+)
+
+fig1.update_layout(xaxis_title="Cliente", yaxis_title="Número de Mascotas")
+st.plotly_chart(fig1, use_container_width=True)
+
+
+
+# --------------------------------------------------
+# 6. GRÁFICO — Clientes añadidos por mes
+# --------------------------------------------------
+
+pink_box("📈 Clientes Nuevos por Mes")
+
+query_clientes_mes = """
+    SELECT DATE_FORMAT(fecha_registro, '%Y-%m') AS mes,
+           COUNT(*) AS cantidad
+    FROM clientes
+    GROUP BY mes
+    ORDER BY mes;
+"""
+
+datos_clientes_mes = db.ejecutar_query(query_clientes_mes)
+df_mes = pd.DataFrame(datos_clientes_mes)
+
+fig2 = px.line(
+    df_mes,
+    x="mes",
+    y="cantidad",
+    markers=True,
+    title="Clientes añadidos por mes"
+)
+
+fig2.update_layout(xaxis_title="Mes", yaxis_title="Clientes nuevos")
+st.plotly_chart(fig2, use_container_width=True)

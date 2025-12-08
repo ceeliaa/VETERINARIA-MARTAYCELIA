@@ -6,6 +6,8 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(ROOT_DIR)
 
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 from src.database.db import DataBaseConnector
 
 
@@ -149,15 +151,91 @@ def eliminar_cita(cita_id):
 
 
 # --------------------------------------------------
+# GRÁFICO INTERACTIVO — ESTADO DE LAS CITAS
+# --------------------------------------------------
+
+def grafico_citas_por_estado(citas):
+    if not citas:
+        st.info("No hay citas para generar gráficos.")
+        return
+
+    df = pd.DataFrame(citas)
+    df['estado'] = df['estado'].fillna("Desconocido")
+
+    conteo = df['estado'].value_counts().reset_index()
+    conteo.columns = ["estado", "cantidad"]
+
+    fig = px.pie(
+        conteo,
+        names="estado",
+        values="cantidad",
+        title="Gráfico de Estados de las Citas",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
+# --------------------------------------------------
 # 1. LISTA DE CITAS
 # --------------------------------------------------
 
 citas = obtener_citas()
 
 pink_box("📋 Lista de Citas")
-
 st.dataframe(citas, use_container_width=True)
 
+
+# --------------------------------------------------
+# 1B. GRÁFICO
+# --------------------------------------------------
+
+pink_box("📊 Estado de las Citas")
+grafico_citas_por_estado(citas)
+
+
+
+
+# --------------------------------------------------
+# GRÁFICO INTERACTIVO — CITAS POR MOTIVO
+# --------------------------------------------------
+
+def grafico_citas_por_motivo(citas):
+    if not citas:
+        st.info("No hay citas para generar gráficos.")
+        return
+
+    df = pd.DataFrame(citas)
+    df['motivo'] = df['motivo'].fillna("Desconocido")
+
+    conteo = df['motivo'].value_counts().reset_index()
+    conteo.columns = ["motivo", "cantidad"]
+
+    fig = px.bar(
+        conteo,
+        x="motivo",
+        y="cantidad",
+        title="Motivos más frecuentes de las citas",
+        color="cantidad",
+        color_continuous_scale=px.colors.sequential.Pinkyl,
+        text="cantidad"
+    )
+
+    fig.update_layout(
+        xaxis_title="Motivo",
+        yaxis_title="Número de citas",
+        xaxis_tickangle=45,
+        showlegend=False
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+pink_box("📊 Motivos más frecuentes de las Citas")
+grafico_citas_por_motivo(citas)
 
 
 # --------------------------------------------------
@@ -179,7 +257,6 @@ motivos_posibles = [
     "Control post-operatorio",
     "Otro"
 ]
-
 
 estados_posibles = ["Pendiente", "Realizada", "Cancelada"]
 
@@ -241,9 +318,9 @@ if len(citas) > 0:
 
             nueva_fecha = st.date_input("Fecha", value=fecha_original)
             nueva_hora = st.time_input("Hora", value=hora_original)
+
             motivo_actual = cita_sel["motivo"]
             index_motivo = motivos_posibles.index(motivo_actual) if motivo_actual in motivos_posibles else 0
-
             nuevo_motivo = st.selectbox("Motivo", motivos_posibles, index=index_motivo)
 
 
@@ -256,8 +333,11 @@ if len(citas) > 0:
             empleado_edit = st.selectbox("Veterinario", list(empleado_dict.keys()))
             nuevo_empleado_id = empleado_dict[empleado_edit]
 
-            nuevo_estado = st.selectbox("Estado", estados_posibles,
-                                        index=estados_posibles.index(cita_sel["estado"]))
+            nuevo_estado = st.selectbox(
+                "Estado",
+                estados_posibles,
+                index=estados_posibles.index(cita_sel["estado"])
+            )
 
         if st.form_submit_button("Guardar cambios"):
             nueva_fecha_completa = f"{nueva_fecha} {nueva_hora}"
