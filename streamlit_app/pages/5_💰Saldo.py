@@ -1,3 +1,4 @@
+"""
 import sys
 import os
 
@@ -41,7 +42,5 @@ st.subheader("💰 Lista de Operaciones")
 
 operaciones_saldo = consultar_historial_operaciones()
 st.dataframe(operaciones_saldo, use_container_width=True)
-
-
-
-
+"""
+#Comprobar que queremos hacer esto asi
