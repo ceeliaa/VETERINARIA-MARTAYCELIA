@@ -1,35 +1,3 @@
-class Saldo:
-    def __init__(self):
-        self.saldo_inicial = 0
-        self.saldo_final = 0
-        self.operaciones = []
-
-    def cobrar_consulta(self, monto, cliente):
-        self.saldo_final += monto
-        self.operaciones.append({
-            "tipo": "Ingreso",
-            "monto": monto,
-            "cliente": cliente
-        })
-
-    def pagar_empleado(self, monto, empleado):
-        self.saldo_final -= monto
-        self.operaciones.append({
-            "tipo": "Gasto",
-            "monto": monto,
-            "empleado": empleado
-        })
-    def pagar_facturas(self, monto):
-        self.saldo_final-=monto
-        self.operaciones.append({
-            "tipo":"Gasto",
-            "monto":monto
-        })
-
-    def consultar_saldo(self):
-        return self.saldo_final
-    
-#ESTE ES EL CAMBIO
 from datetime import datetime
 
 class Saldo:
@@ -49,11 +17,22 @@ class Saldo:
     
     def _obtener_saldo_actual(self):
         """Obtiene el saldo actual de la base de datos"""
-        query = "SELECT saldo FROM saldo ORDER BY id DESC LIMIT 1"
+        query = "SELECT saldo_nuevo FROM saldo ORDER BY id DESC LIMIT 1"
         resultado = self.db.ejecutar_query(query)
-        if resultado and len(resultado) > 0:
-            return float(resultado[0]['saldo'])
-        return 0.0
+
+        # Si no hay registros → saldo = 0.0
+        if not resultado:
+            return 0.0
+
+        ultimo_saldo = resultado[0]['saldo_nuevo']
+
+        # Si el valor es NULL → saldo = 0.0
+        if ultimo_saldo is None:
+            return 0.0
+
+        return float(ultimo_saldo)
+
+
     
     def _registrar_operacion(self, tipo_operacion, concepto, monto):
         """
@@ -101,14 +80,6 @@ class Saldo:
     def cobrar_consulta(self, monto, servicio, cliente=None):
         """
         Registra el cobro de una consulta o servicio
-        
-        Args:
-            monto: Cantidad cobrada
-            servicio: Nombre del servicio prestado
-            cliente: Nombre del cliente (opcional)
-            
-        Returns:
-            float: Nuevo saldo
         """
         concepto = f"Consulta: {servicio}"
         if cliente:
@@ -119,16 +90,6 @@ class Saldo:
     def pagar_empleado(self, monto, empleado):
         """
         Registra el pago de nómina a un empleado
-        
-        Args:
-            monto: Cantidad a pagar
-            empleado: Nombre del empleado
-            
-        Returns:
-            float: Nuevo saldo
-            
-        Raises:
-            ValueError: Si no hay saldo suficiente
         """
         concepto = f"Nómina Empleado: {empleado}"
         return self._registrar_operacion('GASTO', concepto, monto)
@@ -136,17 +97,6 @@ class Saldo:
     def pagar_facturas(self, monto, proveedor=None, descripcion=None):
         """
         Registra el pago de facturas
-        
-        Args:
-            monto: Cantidad a pagar
-            proveedor: Nombre del proveedor (opcional)
-            descripcion: Descripción de la factura (opcional)
-            
-        Returns:
-            float: Nuevo saldo
-            
-        Raises:
-            ValueError: Si no hay saldo suficiente
         """
         concepto = "Facturas Proveedores"
         if proveedor:
@@ -159,17 +109,6 @@ class Saldo:
     def registrar_gasto(self, monto, tipo_gasto, descripcion):
         """
         Registra un gasto genérico
-        
-        Args:
-            monto: Cantidad a pagar
-            tipo_gasto: Tipo de gasto (Material Médico, Mantenimiento, etc.)
-            descripcion: Descripción del gasto
-            
-        Returns:
-            float: Nuevo saldo
-            
-        Raises:
-            ValueError: Si no hay saldo suficiente
         """
         concepto = f"{tipo_gasto}: {descripcion}"
         return self._registrar_operacion('GASTO', concepto, monto)
@@ -177,22 +116,12 @@ class Saldo:
     def registrar_ingreso(self, monto, concepto):
         """
         Registra un ingreso genérico
-        
-        Args:
-            monto: Cantidad a ingresar
-            concepto: Descripción del ingreso
-            
-        Returns:
-            float: Nuevo saldo
         """
         return self._registrar_operacion('INGRESO', concepto, monto)
-    
+
     def consultar_saldo(self):
         """
-        Consulta el saldo actual
-        
-        Returns:
-            float: Saldo actual
+        Devuelve el saldo actual
         """
         self.saldo_actual = self._obtener_saldo_actual()
         return self.saldo_actual
@@ -200,13 +129,6 @@ class Saldo:
     def obtener_historial(self, limite=None, tipo_operacion=None):
         """
         Obtiene el historial de operaciones
-        
-        Args:
-            limite: Número máximo de operaciones a devolver
-            tipo_operacion: Filtrar por 'INGRESO' o 'GASTO'
-            
-        Returns:
-            list: Lista de operaciones
         """
         query = "SELECT * FROM saldo WHERE 1=1"
         params = []
@@ -220,19 +142,12 @@ class Saldo:
         if limite:
             query += f" LIMIT {limite}"
         
-        if params:
-            return self.db.ejecutar_query(query, tuple(params))
-        else:
-            return self.db.ejecutar_query(query)
+        return self.db.ejecutar_query(query, tuple(params)) if params else self.db.ejecutar_query(query)
     
     def obtener_estadisticas_mes(self):
         """
         Obtiene estadísticas del mes actual
-        
-        Returns:
-            dict: Diccionario con ingresos, gastos y balance del mes
         """
-        # Ingresos del mes
         query_ingresos = """
             SELECT COALESCE(SUM(monto), 0) as total 
             FROM saldo 
@@ -242,7 +157,6 @@ class Saldo:
         """
         ingresos = float(self.db.ejecutar_query(query_ingresos)[0]['total'])
         
-        # Gastos del mes
         query_gastos = """
             SELECT COALESCE(SUM(monto), 0) as total 
             FROM saldo 
@@ -257,16 +171,3 @@ class Saldo:
             'gastos': gastos,
             'balance': ingresos - gastos
         }
-    
-    def verificar_saldo_suficiente(self, monto):
-        """
-        Verifica si hay saldo suficiente para realizar un gasto
-        
-        Args:
-            monto: Cantidad a verificar
-            
-        Returns:
-            bool: True si hay saldo suficiente, False en caso contrario
-        """
-        return self.saldo_actual >= monto
-    

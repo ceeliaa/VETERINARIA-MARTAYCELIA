@@ -5,7 +5,7 @@ st.set_page_config(
     page_icon="🐒",
 )
 
-st.write("# Bienvenido a la clínica veterinaria 🐾🐶🩺")
+st.write("# Bienvenido a la clínica veterinaria! 🐾🐶🩺")
 
 st.markdown(
     """

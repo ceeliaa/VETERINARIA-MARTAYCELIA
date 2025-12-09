@@ -1,5 +1,8 @@
 import sys
 import os
+import pandas as pd
+import plotly.express as px
+
 
 # Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -158,6 +161,37 @@ pink_box("📋 Lista de Mascotas")
 
 mascotas = obtener_mascotas()
 st.dataframe(mascotas, use_container_width=True)
+
+
+# --------------------------------------------------
+# GRÁFICO: Mascotas por especie
+# --------------------------------------------------
+
+pink_box("📊 Distribución de Mascotas por Especie")
+
+if mascotas:
+    df_mascotas = pd.DataFrame(mascotas)
+
+    # Contar cuántas hay por especie
+    conteo_especies = df_mascotas['especie'].value_counts().reset_index()
+    conteo_especies.columns = ["Especie", "Cantidad"]
+
+    # Crear gráfico
+    fig_especies = px.pie(
+        conteo_especies,
+        names="Especie",
+        values="Cantidad",
+        title="Mascotas por especie",
+        color_discrete_sequence=px.colors.sequential.Pinkyl
+    )
+
+    fig_especies.update_traces(textposition='inside', textinfo='percent+label')
+
+    st.plotly_chart(fig_especies, use_container_width=True)
+
+else:
+    st.info("No hay mascotas registradas para generar gráficos.")
+
 
 
 

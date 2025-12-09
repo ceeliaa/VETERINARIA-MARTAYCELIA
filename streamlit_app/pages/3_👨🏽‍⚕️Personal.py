@@ -1,5 +1,7 @@
 import sys
 import os
+import pandas as pd
+import plotly.express as px
 
 # Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -150,6 +152,43 @@ empleados = obtener_empleados()
 pink_box("📋 Lista del Personal")
 
 st.dataframe(empleados, use_container_width=True)
+
+
+# --------------------------------------------------
+# GRÁFICO: Distribución de Personal por Puesto
+# --------------------------------------------------
+
+pink_box("📊 Distribución del Personal por Puesto")
+
+if empleados:
+    df_empleados = pd.DataFrame(empleados)
+
+    # Contar cuántas personas hay por puesto
+    conteo_puestos = df_empleados["puesto"].value_counts().reset_index()
+    conteo_puestos.columns = ["Puesto", "Cantidad"]
+
+    fig_puestos = px.bar(
+        conteo_puestos,
+        x="Puesto",
+        y="Cantidad",
+        title="Cantidad de empleados por puesto",
+        color="Cantidad",
+        color_continuous_scale=px.colors.sequential.Pinkyl,
+        text="Cantidad"
+    )
+
+    fig_puestos.update_layout(
+        xaxis_title="Puesto",
+        yaxis_title="Número de empleados",
+        xaxis_tickangle=45,
+        showlegend=False
+    )
+
+    st.plotly_chart(fig_puestos, use_container_width=True)
+
+else:
+    st.info("No hay empleados registrados para generar gráficos.")
+
 
 
 
