@@ -9,11 +9,13 @@ os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
 Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
 """
 sys.path.append(ROOT_DIR)
+#Agregamos la carpeta raiz ROOT_DIR al path, de esta forma Python busca módulos dentro de la carpeta raiz del proyecto
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
+import streamlit as st #se usa para crear aplicaciones web interactivas en Python
+import pandas as pd #para manejo de datos en Python (tablas, CSV, Excel, etc.)
+import plotly.express as px #crear gráficos interactivos facilmente
 from src.database.db import DataBaseConnector
+#Tenemos que importar la clase DataBaseConnector del dp.py para poder conectarse a la base de datos y ejecutar consultas
 
 
 # --------------------------------------------------
