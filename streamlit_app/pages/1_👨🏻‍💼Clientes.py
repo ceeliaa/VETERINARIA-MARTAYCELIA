@@ -3,6 +3,11 @@ import os
 
 # Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+"""
+os.path.abspath(__file__) → Obtiene la ruta absoluta del archivo
+os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
+Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
+"""
 sys.path.append(ROOT_DIR)
 
 import streamlit as st
