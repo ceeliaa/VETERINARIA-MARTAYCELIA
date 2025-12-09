@@ -22,13 +22,14 @@ from src.database.db import DataBaseConnector
 # CONFIGURACIÓN PÁGINA
 # --------------------------------------------------
 
+#Comenzamos indicando como sera el titulo de la pestaña del navegador
 st.set_page_config(page_title="Clientes", page_icon="🧍‍♂️")
 
 
 # --------------------------------------------------
 # ESTILOS (CSS)
 # --------------------------------------------------
-
+#Nosotras hemos decidido definir la apariencia de esta pestaña mediante el uso de css
 st.markdown("""
 <style>
 
@@ -71,13 +72,14 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
+#Con esta última linea permitimos al programa de python entender html y css
 
 
 
 # --------------------------------------------------
 # PINK BOX COMPONENT
 # --------------------------------------------------
-
+#Usando la misma de idea de antes, generamos un div rosa con borde redondeado, sombra y padding (diseño de la página)
 def pink_box(title):
     st.markdown(
         f"""
@@ -103,26 +105,27 @@ def pink_box(title):
 # --------------------------------------------------
 # CONEXIÓN A LA BBDD
 # --------------------------------------------------
-
+#Creamos el objeto db usando la clase DaraBaseConnector que hemos importado antes
+#Necesitamos hacer esto para poder usar, consultar o modificar la base de datos más tarde
 db = DataBaseConnector(password="12345678")
-
 
 
 # --------------------------------------------------
 # TÍTULO PRINCIPAL
 # --------------------------------------------------
-
+#Titulo principal de la página de Gestión de Clientes
 st.markdown("""
     <h1>🧍‍♂️ Gestión de Clientes</h1>
     <hr style='margin-top:5px; margin-bottom:20px;'>
 """, unsafe_allow_html=True)
 
 
-
 # --------------------------------------------------
 # FUNCIONES AUXILIARES
 # --------------------------------------------------
+#Estas funciones estan creadas de tal forma que se puedan llevar como "querys" o consultas a la base de datos de MySQL
 
+#Devuelve los datos como una lista de diccionarios de los clientes registrados en la base de datos de forma ascendente según su id
 def obtener_clientes():
     query = """
         SELECT id, nombre, apellidos, dni, telefono, correo, fecha_registro
@@ -131,6 +134,8 @@ def obtener_clientes():
     """
     return db.ejecutar_query(query)
 
+#Añadimos un cliente a la base de datos junto a cuando se incluyo en esta misma (lo necesitaremos más tarde)
+#con fetch=False indicamos que no esperamos resultados, solo queremos que se ejecute la acción
 def insertar_cliente(nombre, apellidos, dni, telefono, correo):
     query = """
         INSERT INTO clientes (nombre, apellidos, dni, telefono, correo, fecha_registro)
@@ -138,6 +143,7 @@ def insertar_cliente(nombre, apellidos, dni, telefono, correo):
     """
     db.ejecutar_query(query, (nombre, apellidos, dni, telefono, correo), fetch=False)
 
+#A partir de la clave id modificamos información de un cliente de la base de datos
 def actualizar_cliente(cliente_id, nombre, apellidos, dni, telefono, correo):
     query = """
         UPDATE clientes
@@ -146,29 +152,33 @@ def actualizar_cliente(cliente_id, nombre, apellidos, dni, telefono, correo):
     """
     db.ejecutar_query(query, (nombre, apellidos, dni, telefono, correo, cliente_id), fetch=False)
 
+#A partir de un id eliminar un cliente
 def eliminar_cliente(cliente_id):
     query = "DELETE FROM clientes WHERE id=%s"
     db.ejecutar_query(query, (cliente_id,), fetch=False)
 
 
-
+"""
+PARTE MÁS VISUAL DEL TRABAJO (despues del titulo)
+"""
 # --------------------------------------------------
-# 1. LISTA DE CLIENTES
+# 1. TABLA con la LISTA de CLIENTES
 # --------------------------------------------------
 
-pink_box("📋 Lista de Clientes")
+pink_box("📋 Lista de Clientes")#usamos el componente pink_box() que hemos definido anteriormente
 
+#guardamos en clientes el conjunto de diccionarios de nuestros usuarios y creamos un dataframe
 clientes = obtener_clientes()
 st.dataframe(clientes, use_container_width=True)
 
 
-
 # --------------------------------------------------
-# 2. AÑADIR CLIENTE
+# 2. cuadro para AÑADIR CLIENTE
 # --------------------------------------------------
 
 pink_box("➕ Añadir Cliente")
 
+#Creamos un formulario de 2 columnas (efecto visual, nada más) con los pares que se deben de rellenar para guardar al clietne en la BBDD
 with st.form("form_anadir_cliente"):
 
     col1, col2 = st.columns(2)
@@ -182,27 +192,36 @@ with st.form("form_anadir_cliente"):
         telefono = st.text_input("Teléfono")
         correo = st.text_input("Correo electrónico")
 
+    #Cuando se rellenen todos los datos necesarios, se le da al boton "Añadir Cliente" y con la información recogida se llama a la función auxiliar insertar_cliente()
     if st.form_submit_button("Añadir Cliente"):
         try:
             insertar_cliente(nombre, apellidos, dni, telefono, correo)
             st.success("Cliente añadido correctamente 🩷")
-            st.rerun()
-        except Exception as e:
+            st.rerun() #Recargamos la página para actualizar la lista y por tanto los gráficos
+        except Exception as e:#En caso de error:
             st.error(f"Error al añadir cliente: {e}")
 
 
 
 # --------------------------------------------------
-# 3. EDITAR CLIENTE
+# 3. TABLA para poder MODIFICAR CLIENTE
 # --------------------------------------------------
 
 pink_box("✏️ Editar Cliente")
 
+"""
+Crea un diccionario que mapea un string descriptivo a cada cliente (id - nombre apellidos).
+
+Permite seleccionar un cliente de la lista para editarlo.
+"""
+#Creamos un diccionario que mapea un string a cada cliente de esta forma: id - nombre apellidos
 mapa_clientes = {f"{c['id']} - {c['nombre']} {c['apellidos']}": c for c in clientes}
 
+#Con las claves de nuestro diccionaro creamos una lista que introducimos en un selectbox para que se puedan visualizar y buscar el cliente concreto
 cliente_key = st.selectbox("Selecciona un cliente", list(mapa_clientes.keys()))
-cliente_sel = mapa_clientes[cliente_key]
+cliente_sel = mapa_clientes[cliente_key]#Guardamos el cliente seleccionado
 
+#En estas 2 columnas mostramos los datos ACTUALES del cliente seleccionado
 with st.form("form_editar_cliente"):
 
     col1, col2 = st.columns(2)
@@ -217,6 +236,7 @@ with st.form("form_editar_cliente"):
         nuevo_correo = st.text_input("Correo", cliente_sel["correo"])
 
     if st.form_submit_button("Guardar Cambios"):
+        #Tras darle al boton "Guardar Cambios" llamamos a la función actualizar_cliente() y asi de esta forma guardar los nuevos valores
         try:
             actualizar_cliente(
                 cliente_sel["id"],
@@ -227,8 +247,8 @@ with st.form("form_editar_cliente"):
                 nuevo_correo
             )
             st.success("Cliente actualizado correctamente 💚")
-            st.rerun()
-        except Exception as e:
+            st.rerun() #Refrescamos como antes
+        except Exception as e:#Mensaje de error tras caso de fallo
             st.error(f"Error al actualizar cliente: {e}")
 
 
@@ -239,22 +259,24 @@ with st.form("form_editar_cliente"):
 
 pink_box("🗑️ Eliminar Cliente")
 
+#Se permite eliminar el cliente que haya sido seleccionado
 if st.button("Eliminar cliente seleccionado"):
     try:
         eliminar_cliente(cliente_sel["id"])
         st.success("Cliente eliminado correctamente ❌")
-        st.rerun()
-    except Exception as e:
+        st.rerun()#Refrescar la página
+    except Exception as e:#Control de errores
         st.error(f"Error al eliminar cliente: {e}")
 
 
 
 # --------------------------------------------------
-# 5. GRÁFICO — Mascotas por Cliente
+# 5. GRÁFICO DE BARRAS de Mascotas por Cliente
 # --------------------------------------------------
 
 pink_box("📊 Número de Mascotas por Cliente")
 
+#Consultamos creando una query nueva la cantidad de mascotas que tenemos por clientes
 query_mascotas = """
     SELECT c.nombre, c.apellidos, COUNT(m.id) AS num_mascotas
     FROM clientes c
@@ -262,7 +284,7 @@ query_mascotas = """
     GROUP BY c.id
     ORDER BY num_mascotas DESC;
 """
-
+#La ejecutamos en la base de datos y nos devuelve los resultados a un DataFrame de pandas
 datos_mascotas = db.ejecutar_query(query_mascotas)
 df_mascotas = pd.DataFrame(datos_mascotas)
 
