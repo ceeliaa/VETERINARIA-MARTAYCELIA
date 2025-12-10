@@ -1,3 +1,8 @@
+"""
+PÁGINA DE INICIO DE NUESTRA APP
+"""
+
+
 import streamlit as st
 
 st.set_page_config(

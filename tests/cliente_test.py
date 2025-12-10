@@ -1,6 +1,7 @@
 import pytest
 from src.modulos.cliente import Cliente
 
+#Comprobamos la existencia de crear_cliente(), al principio no esta creada osea que tendremos que crearla posteriormente
 def test_crear_cliente():
     cliente = Cliente(
         nombre="Maria",
@@ -9,8 +10,9 @@ def test_crear_cliente():
         telefono="612345678",
         correo="maria@mail.com"
     )
-
-    assert cliente.nombre == "Maria"
+    
+    #Si la condición es falsa, la prueba falla y se lanza un AssertionError
+    assert cliente.nombre == "Maria" 
     assert cliente.apellidos == "Blanco Gonzalez"
     assert cliente.dni == "12345678A"
     assert cliente.telefono == "612345678"

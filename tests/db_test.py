@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Añadir la raíz del proyecto al path
+# Calcular la ruta raíz del proyecto y añadirla al path
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
