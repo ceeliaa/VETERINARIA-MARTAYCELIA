@@ -1,9 +1,7 @@
 from datetime import datetime
 
 class Saldo:
-    """
-    Clase para gestionar el saldo de la clínica veterinaria
-    """
+
     
     def __init__(self, db_connector):
         """

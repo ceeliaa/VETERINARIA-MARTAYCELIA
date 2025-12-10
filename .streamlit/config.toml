@@ -1,6 +1,6 @@
 [theme]
 primaryColor="#FFB7CE"                # Rosa principal
-backgroundColor="#FFF9FB"             # Fondo muy claro rosa
+backgroundColor="#f9eef2ff"             # Fondo muy claro rosa
 secondaryBackgroundColor="#FFE6EB"    # Recuadros rositas suaves
 textColor="#4A4A4A"                   # Gris oscuro 
 font="sans serif"

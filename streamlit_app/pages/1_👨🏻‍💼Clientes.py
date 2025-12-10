@@ -210,11 +210,8 @@ with st.form("form_anadir_cliente"):
 
 pink_box("✏️ Editar Cliente")
 
-"""
-Crea un diccionario que mapea un string descriptivo a cada cliente (id - nombre apellidos).
+#Permite seleccionar un cliente de la lista para editarlo.
 
-Permite seleccionar un cliente de la lista para editarlo.
-"""
 #Creamos un diccionario que mapea un string a cada cliente de esta forma: id - nombre apellidos
 mapa_clientes = {f"{c['id']} - {c['nombre']} {c['apellidos']}": c for c in clientes}
 
@@ -277,22 +274,28 @@ if st.button("Eliminar cliente seleccionado"):
 
 pink_box("📊 Número de Mascotas por Cliente")
 
-#Consultamos creando una query nueva la cantidad de mascotas que tenemos por clientes
 query_mascotas = """
-    SELECT c.nombre, c.apellidos, COUNT(m.id) AS num_mascotas
+    SELECT 
+        c.id,
+        CONCAT(c.nombre, ' ', c.apellidos) AS cliente,
+        COUNT(m.id) AS num_mascotas
     FROM clientes c
     LEFT JOIN mascotas m ON c.id = m.cliente_id
-    GROUP BY c.id
+    GROUP BY c.id, c.nombre, c.apellidos
     ORDER BY num_mascotas DESC;
 """
-#La ejecutamos en la base de datos y nos devuelve los resultados a un DataFrame de pandas
+
+
 datos_mascotas = db.ejecutar_query(query_mascotas)
 df_mascotas = pd.DataFrame(datos_mascotas)
 
-##Creamos un gráfico de barras, las barras tendrán distintos colores dependiendo del número de mascotas
+# 🟢 Conversión clave: asegurar que num_mascotas es entero
+df_mascotas["num_mascotas"] = df_mascotas["num_mascotas"].astype(int)
+
+# Crear gráfico
 fig1 = px.bar(
     df_mascotas,
-    x="nombre",
+    x="cliente",
     y="num_mascotas",
     color="num_mascotas",
     color_continuous_scale=px.colors.sequential.Pinkyl,
@@ -300,7 +303,10 @@ fig1 = px.bar(
     title="Mascotas por Cliente"
 )
 
+
+fig1.update_traces(textposition="outside")
 fig1.update_layout(xaxis_title="Cliente", yaxis_title="Número de Mascotas")
+
 st.plotly_chart(fig1, use_container_width=True)
 
 

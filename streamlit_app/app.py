@@ -83,7 +83,7 @@ with col1:
 
         Nuestro objetivo es ayudarte a ahorrar tiempo, reducir errores y ofrecer un servicio de calidad a cada mascota que atendemos.  
 
-        Gracias por formar parte del equipo y por cuidar cada día de nuestros pacientes con tanta dedicación 💚
+        Gracias por formar parte del equipo y por cuidar cada día de nuestros pacientes con tanta dedicación 🩷
         """,
         unsafe_allow_html=True
     )
