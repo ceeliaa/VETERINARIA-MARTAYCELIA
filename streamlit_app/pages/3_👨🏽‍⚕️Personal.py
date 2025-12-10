@@ -5,23 +5,32 @@ import plotly.express as px
 
 # Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+"""
+os.path.abspath(__file__) → Obtiene la ruta absoluta del archivo
+os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
+Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
+"""
 sys.path.append(ROOT_DIR)
+#Agregamos la carpeta raiz ROOT_DIR al path, de esta forma Python busca módulos dentro de la carpeta raiz del proyecto
 
-import streamlit as st
+import streamlit as st#se usa para crear aplicaciones web interactivas en Python
 from src.database.db import DataBaseConnector
+#Tenemos que importar la clase DataBaseConnector del dp.py para poder conectarse a la base de datos y ejecutar consultas
 
 
 # --------------------------------------------------
 # CONFIGURACIÓN PÁGINA
 # --------------------------------------------------
 
+#Comenzamos indicando como sera el titulo de la pestaña del navegador
 st.set_page_config(page_title="Personal", page_icon="👨🏽‍⚕️")
-
 
 # --------------------------------------------------
 # ESTILOS (CSS)
 # --------------------------------------------------
 
+#Nosotras hemos decidido definir la apariencia de esta pestaña mediante el uso de css
+#Seguimos un protocolo de estilo para que nuestra página tenga un diseño parecido
 st.markdown("""
 <style>
 
@@ -66,13 +75,14 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
+#Con esta última linea permitimos al programa de python entender html y css
 
 
 
 # --------------------------------------------------
-# RECUADRO ROSA (pink_box)
+# PINK BOX COMPONENT
 # --------------------------------------------------
-
+#Usando la misma de idea de antes, generamos un div rosa con borde redondeado, sombra y padding (diseño de la página)
 def pink_box(title):
     st.markdown(
         f"""
@@ -98,37 +108,40 @@ def pink_box(title):
 # --------------------------------------------------
 # CONEXIÓN A BBDD
 # --------------------------------------------------
-
+#Creamos el objeto db usando la clase DaraBaseConnector que hemos importado antes
+#Necesitamos hacer esto para poder usar, consultar o modificar la base de datos más tarde
 db = DataBaseConnector(password="12345678")
-
-
 
 # --------------------------------------------------
 # TÍTULO PRINCIPAL
 # --------------------------------------------------
 
+#Titulo principal de la página de Gestión de Personal
 st.markdown("""
     <h1>👨🏽‍⚕️ Gestión del Personal de la Clínica</h1>
     <hr style='margin-top:5px; margin-bottom:20px;'>
 """, unsafe_allow_html=True)
 
-
-
 # --------------------------------------------------
 # FUNCIONES AUXILIARES
 # --------------------------------------------------
+#Estas funciones estan creadas de tal forma que se puedan llevar como "querys" o consultas a la base de datos de MySQL
 
+#Devuelve los datos como una lista de diccionarios de los empleados registrados en la base de datos de forma ascendente según su id
 def obtener_empleados():
     query = "SELECT * FROM empleados ORDER BY id ASC"
     return db.ejecutar_query(query)
 
+#Añadimos un empleado a la base de datos junto a cuando se incluyo en esta misma (lo necesitaremos más tarde)
+#con fetch=False indicamos que no esperamos resultados, solo queremos que se ejecute la acción
 def insertar_empleado(nombre, apellidos, puesto, telefono):
     query = """
         INSERT INTO empleados (nombre, apellidos, puesto, telefono)
         VALUES (%s, %s, %s, %s)
     """
     db.ejecutar_query(query, (nombre, apellidos, puesto, telefono), fetch=False)
-
+    
+#A partir de la clave id modificamos información de un empleado de la base de datos
 def actualizar_empleado(empleado_id, nombre, apellidos, puesto, telefono):
     query = """
         UPDATE empleados
@@ -137,19 +150,24 @@ def actualizar_empleado(empleado_id, nombre, apellidos, puesto, telefono):
     """
     db.ejecutar_query(query, (nombre, apellidos, puesto, telefono, empleado_id), fetch=False)
 
+#A partir de un id eliminar un cliente
 def eliminar_empleado(empleado_id):
     query = "DELETE FROM empleados WHERE id=%s"
     db.ejecutar_query(query, (empleado_id,), fetch=False)
 
 
+"""
+PARTE MÁS VISUAL DEL TRABAJO (despues del titulo)
+"""
 
 # --------------------------------------------------
-# 1. LISTA DEL PERSONAL
+# 1. TABLA con LISTA DEL PERSONAL
 # --------------------------------------------------
 
 empleados = obtener_empleados()
+#guardamos en clientes el conjunto de diccionarios de nuestros usuarios y creamos un dataframe
 
-pink_box("📋 Lista del Personal")
+pink_box("📋 Lista del Personal")#usamos el componente pink_box() que hemos definido anteriormente
 
 st.dataframe(empleados, use_container_width=True)
 
@@ -193,12 +211,12 @@ else:
 
 
 # --------------------------------------------------
-# 2. AÑADIR PERSONAL
+# 2. cuadro para AÑADIR PERSONAL
 # --------------------------------------------------
 
 pink_box("➕ Añadir Personal")
 
-puestos_posibles = [
+puestos_posibles = [ #Es importar que hay una lista de posibles puestos que puede realizar un empleado
     "Veterinario",
     "Veterinaria",
     "Auxiliar",
@@ -233,7 +251,7 @@ with st.form("form_anadir_empleado"):
 
 
 # --------------------------------------------------
-# 3. EDITAR PERSONAL
+# 3. TABLA para poder MODIFICAR CLIENTE
 # --------------------------------------------------
 
 pink_box("✏️ Editar Personal")
@@ -285,12 +303,13 @@ else:
 
 pink_box("🗑️ Eliminar Personal")
 
+#Se permite eliminar el empleado que haya sido seleccionado
 if len(empleados) > 0:
     if st.button("Eliminar empleado seleccionado"):
         try:
             eliminar_empleado(empleado_sel["id"])
             st.success("Empleado eliminado correctamente ❌")
-            st.rerun()
+            st.rerun() #Refrescar la página para tener los nuevos valores
         except Exception as e:
             st.error(f"Error al eliminar empleado: {e}")
 else:
