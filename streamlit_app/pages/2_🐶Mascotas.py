@@ -263,9 +263,11 @@ Permite seleccionar un cliente de la lista para editarlo.
 #Creamos un diccionario que mapea un string a cada mascota de esta forma: id - nombre especie
 mapa_mascotas = {f"{m['id']} - {m['nombre']} ({m['especie']})": m for m in mascotas}
 
+#Con las claves de nuestro diccionaro creamos una lista que introducimos en un selectbox para que se puedan visualizar y buscar la mascota concreta
 mascota_key = st.selectbox("Selecciona una mascota", list(mapa_mascotas.keys()))
 mascota_sel = mapa_mascotas[mascota_key]
 
+#En estas 2 columnas mostramos los datos ACTUALES de la mascota seleccionado
 with st.form("form_editar_mascota"):
 
     col1, col2 = st.columns(2)
@@ -281,7 +283,8 @@ with st.form("form_editar_mascota"):
     with col2:
         nueva_raza = st.text_input("Raza", mascota_sel["raza"])
         nuevo_duenio = st.selectbox("Dueño", list(dic_clientes.keys()))
-
+        
+    #Tras darle al boton "Guardar Cambios" llamamos a la función actualizar_mascota() y asi de esta forma guardar los nuevos valores
     if st.form_submit_button("Guardar cambios"):
         try:
             actualizar_mascota(
@@ -304,10 +307,12 @@ with st.form("form_editar_mascota"):
 
 pink_box("🗑️ Eliminar Mascota")
 
+#Se permite eliminar la mascota que haya sido seleccionada
+
 if st.button("Eliminar mascota seleccionada"):
     try:
         eliminar_mascota(mascota_sel["id"])
         st.success("Mascota eliminada correctamente ❌")
-        st.rerun()
-    except Exception as e:
+        st.rerun()#Refrescar la página
+    except Exception as e:#Control de errores
         st.error(f"Error al eliminar mascota: {e}")
