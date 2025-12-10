@@ -2,48 +2,38 @@ import sys
 import os
 import pandas as pd
 import plotly.express as px
-
-# Añadimos la carpeta raíz del proyecto al path
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-"""
-os.path.abspath(__file__) → Obtiene la ruta absoluta del archivo
-os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
-Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
-"""
-sys.path.append(ROOT_DIR)
-#Agregamos la carpeta raiz ROOT_DIR al path, de esta forma Python busca módulos dentro de la carpeta raiz del proyecto
-
-import streamlit as st#se usa para crear aplicaciones web interactivas en Python
+import plotly.graph_objects as go
+from datetime import datetime
+import calendar
+import streamlit as st
 from src.database.db import DataBaseConnector
-#Tenemos que importar la clase DataBaseConnector del dp.py para poder conectarse a la base de datos y ejecutar consultas
+
+
+# --------------------------------------------------
+# CONFIGURACIÓN RUTA PROYECTO
+# --------------------------------------------------
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_DIR)
 
 
 # --------------------------------------------------
 # CONFIGURACIÓN PÁGINA
 # --------------------------------------------------
-
-#Comenzamos indicando como sera el titulo de la pestaña del navegador
 st.set_page_config(page_title="Personal", page_icon="👨🏽‍⚕️")
 
-# --------------------------------------------------
-# ESTILOS (CSS)
-# --------------------------------------------------
 
-#Nosotras hemos decidido definir la apariencia de esta pestaña mediante el uso de css
-#Seguimos un protocolo de estilo para que nuestra página tenga un diseño parecido
+# --------------------------------------------------
+# ESTILOS CSS
+# --------------------------------------------------
 st.markdown("""
 <style>
-
-    .main {
-        background-color: #FFF9FB;
-    }
+    .main { background-color: #FFF9FB; }
 
     h1 {
         color: #4A4A4A !important;
         text-align: center !important;
         font-weight: 700 !important;
     }
-
     h2, h3, h4 {
         color: #4A4A4A !important;
         font-weight: 600 !important;
@@ -58,13 +48,11 @@ st.markdown("""
         font-size: 16px !important;
         font-weight: 600 !important;
     }
-
     div.stButton > button:hover {
         background-color: #FFC7DA !important;
-        color: black !important;
     }
 
-    /* Inputs redondeados y en rosa */
+    /* Inputs bonitos */
     .stTextInput > div > div > input,
     .stSelectbox > div > div,
     .stDateInput > div > div > input,
@@ -72,17 +60,13 @@ st.markdown("""
         border-radius: 10px !important;
         border: 2px solid #FFB7CE !important;
     }
-
 </style>
 """, unsafe_allow_html=True)
-#Con esta última linea permitimos al programa de python entender html y css
-
 
 
 # --------------------------------------------------
-# PINK BOX COMPONENT
+# COMPONENTE PINK BOX
 # --------------------------------------------------
-#Usando la misma de idea de antes, generamos un div rosa con borde redondeado, sombra y padding (diseño de la página)
 def pink_box(title):
     st.markdown(
         f"""
@@ -92,7 +76,7 @@ def pink_box(title):
             padding-left:25px;
             border-radius:14px;
             border:2px solid #FFB6C9;
-            box-shadow:0 4px 12px rgba(255, 182, 201, 0.4);
+            box-shadow:0 4px 12px rgba(255,182,201,0.4);
             font-weight:600;
             font-size:20px;
             margin-top:20px;
@@ -100,217 +84,266 @@ def pink_box(title):
             {title}
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
 
 
 # --------------------------------------------------
 # CONEXIÓN A BBDD
 # --------------------------------------------------
-#Creamos el objeto db usando la clase DaraBaseConnector que hemos importado antes
-#Necesitamos hacer esto para poder usar, consultar o modificar la base de datos más tarde
 db = DataBaseConnector(password="12345678")
 
-# --------------------------------------------------
-# TÍTULO PRINCIPAL
-# --------------------------------------------------
-
-#Titulo principal de la página de Gestión de Personal
-st.markdown("""
-    <h1>👨🏽‍⚕️ Gestión del Personal de la Clínica</h1>
-    <hr style='margin-top:5px; margin-bottom:20px;'>
-""", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# FUNCIONES AUXILIARES
+# FUNCIONES BBDD
 # --------------------------------------------------
-#Estas funciones estan creadas de tal forma que se puedan llevar como "querys" o consultas a la base de datos de MySQL
-
-#Devuelve los datos como una lista de diccionarios de los empleados registrados en la base de datos de forma ascendente según su id
 def obtener_empleados():
-    query = "SELECT * FROM empleados ORDER BY id ASC"
-    return db.ejecutar_query(query)
+    return db.ejecutar_query("SELECT * FROM empleados ORDER BY id ASC")
 
-#Añadimos un empleado a la base de datos junto a cuando se incluyo en esta misma (lo necesitaremos más tarde)
-#con fetch=False indicamos que no esperamos resultados, solo queremos que se ejecute la acción
 def insertar_empleado(nombre, apellidos, puesto, telefono):
     query = """
         INSERT INTO empleados (nombre, apellidos, puesto, telefono)
         VALUES (%s, %s, %s, %s)
     """
     db.ejecutar_query(query, (nombre, apellidos, puesto, telefono), fetch=False)
-    
-#A partir de la clave id modificamos información de un empleado de la base de datos
-def actualizar_empleado(empleado_id, nombre, apellidos, puesto, telefono):
+
+def actualizar_empleado(id_, nombre, apellidos, puesto, telefono):
     query = """
-        UPDATE empleados
-        SET nombre=%s, apellidos=%s, puesto=%s, telefono=%s
+        UPDATE empleados SET nombre=%s, apellidos=%s, puesto=%s, telefono=%s
         WHERE id=%s
     """
-    db.ejecutar_query(query, (nombre, apellidos, puesto, telefono, empleado_id), fetch=False)
+    db.ejecutar_query(query, (nombre, apellidos, puesto, telefono, id_), fetch=False)
 
-#A partir de un id eliminar un cliente
-def eliminar_empleado(empleado_id):
-    query = "DELETE FROM empleados WHERE id=%s"
-    db.ejecutar_query(query, (empleado_id,), fetch=False)
+def eliminar_empleado(id_):
+    db.ejecutar_query("DELETE FROM empleados WHERE id=%s", (id_,), fetch=False)
 
+def obtener_citas():
+    query = """
+        SELECT c.id, c.fecha, c.motivo,
+               m.nombre AS mascota,
+               e.nombre AS empleado
+        FROM citas c
+        JOIN mascotas m ON c.mascota_id = m.id
+        JOIN empleados e ON c.empleado_id = e.id
+        ORDER BY c.fecha ASC
+    """
+    return db.ejecutar_query(query)
 
-"""
-PARTE MÁS VISUAL DEL TRABAJO (despues del titulo)
-"""
 
 # --------------------------------------------------
-# 1. TABLA con LISTA DEL PERSONAL
+# TÍTULO
 # --------------------------------------------------
+st.markdown("""
+    <h1>👨🏽‍⚕️ Gestión del Personal de la Clínica</h1>
+    <hr style='margin-top:5px; margin-bottom:20px;'>
+""", unsafe_allow_html=True)
 
+
+
+# --------------------------------------------------
+# 1. LISTA DEL PERSONAL
+# --------------------------------------------------
 empleados = obtener_empleados()
-#guardamos en clientes el conjunto de diccionarios de nuestros usuarios y creamos un dataframe
 
-pink_box("📋 Lista del Personal")#usamos el componente pink_box() que hemos definido anteriormente
-
+pink_box("📋 Lista del Personal")
 st.dataframe(empleados, use_container_width=True)
 
 
 # --------------------------------------------------
-# GRÁFICO: Distribución de Personal por Puesto
+# 2. GRÁFICO EMPLEADOS POR PUESTO
 # --------------------------------------------------
-
 pink_box("📊 Distribución del Personal por Puesto")
 
 if empleados:
     df_empleados = pd.DataFrame(empleados)
-
-    # Contar cuántas personas hay por puesto
-    conteo_puestos = df_empleados["puesto"].value_counts().reset_index()
-    conteo_puestos.columns = ["Puesto", "Cantidad"]
+    conteo = df_empleados["puesto"].value_counts().reset_index()
+    conteo.columns = ["Puesto", "Cantidad"]
 
     fig_puestos = px.bar(
-        conteo_puestos,
+        conteo,
         x="Puesto",
         y="Cantidad",
-        title="Cantidad de empleados por puesto",
         color="Cantidad",
+        text="Cantidad",
         color_continuous_scale=px.colors.sequential.Pinkyl,
-        text="Cantidad"
+        title="Cantidad de empleados por puesto"
     )
-
-    fig_puestos.update_layout(
-        xaxis_title="Puesto",
-        yaxis_title="Número de empleados",
-        xaxis_tickangle=45,
-        showlegend=False
-    )
-
+    
+    fig_puestos.update_layout(xaxis_tickangle=45, showlegend=False)
     st.plotly_chart(fig_puestos, use_container_width=True)
 
-else:
-    st.info("No hay empleados registrados para generar gráficos.")
-
-
-
 
 # --------------------------------------------------
-# 2. cuadro para AÑADIR PERSONAL
+# 3. AÑADIR EMPLEADO
 # --------------------------------------------------
-
 pink_box("➕ Añadir Personal")
 
-puestos_posibles = [ #Es importar que hay una lista de posibles puestos que puede realizar un empleado
-    "Veterinario",
-    "Veterinaria",
-    "Auxiliar",
-    "Asistente",
-    "Recepción",
-    "Peluquero Canino",
+puestos_posibles = [
+    "Veterinario", "Veterinaria", "Auxiliar", "Asistente",
+    "Recepción", "Peluquero Canino"
 ]
 
-with st.form("form_anadir_empleado"):
-
+with st.form("form_add"):
     col1, col2 = st.columns(2)
-
+    
     with col1:
         nombre = st.text_input("Nombre")
         apellidos = st.text_input("Apellidos")
-
     with col2:
         puesto = st.selectbox("Puesto", puestos_posibles)
         telefono = st.text_input("Teléfono")
-
+    
     if st.form_submit_button("Añadir"):
-        if nombre and apellidos and puesto and telefono:
-            try:
-                insertar_empleado(nombre, apellidos, puesto, telefono)
-                st.success("Empleado añadido correctamente 🩷")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al añadir empleado: {e}")
+        if nombre and apellidos and telefono:
+            insertar_empleado(nombre, apellidos, puesto, telefono)
+            st.success("Empleado añadido correctamente 🩷")
+            st.rerun()
         else:
             st.warning("Completa todos los campos.")
 
 
-
 # --------------------------------------------------
-# 3. TABLA para poder MODIFICAR CLIENTE
+# 4. EDITAR EMPLEADO
 # --------------------------------------------------
-
 pink_box("✏️ Editar Personal")
 
-if len(empleados) > 0:
-
-    lista_empleados = {
+if empleados:
+    empleado_map = {
         f"{e['id']} - {e['nombre']} {e['apellidos']} ({e['puesto']})": e
         for e in empleados
     }
 
-    empleado_key = st.selectbox("Selecciona empleado", list(lista_empleados.keys()))
-    empleado_sel = lista_empleados[empleado_key]
+    selected_key = st.selectbox("Selecciona un empleado", list(empleado_map.keys()))
+    empleado_sel = empleado_map[selected_key]
 
-    with st.form("form_editar_empleado"):
+    with st.form("form_edit"):
         col1, col2 = st.columns(2)
 
         with col1:
-            nuevo_nombre = st.text_input("Nombre", empleado_sel["nombre"])
-            nuevos_apellidos = st.text_input("Apellidos", empleado_sel["apellidos"])
+            new_nombre = st.text_input("Nombre", empleado_sel["nombre"])
+            new_apellidos = st.text_input("Apellidos", empleado_sel["apellidos"])
 
         with col2:
-            nuevo_puesto = st.selectbox("Puesto", puestos_posibles,
-                                        index=puestos_posibles.index(empleado_sel["puesto"]))
-            nuevo_telefono = st.text_input("Teléfono", empleado_sel["telefono"])
+            new_puesto = st.selectbox(
+                "Puesto", puestos_posibles,
+                index=puestos_posibles.index(empleado_sel["puesto"])
+            )
+            new_telefono = st.text_input("Teléfono", empleado_sel["telefono"])
 
         if st.form_submit_button("Guardar cambios"):
-            try:
-                actualizar_empleado(
-                    empleado_sel["id"],
-                    nuevo_nombre,
-                    nuevos_apellidos,
-                    nuevo_puesto,
-                    nuevo_telefono
-                )
-                st.success("Empleado actualizado correctamente 💚")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al actualizar empleado: {e}")
-
-else:
-    st.info("No hay empleados registrados.")
-
+            actualizar_empleado(
+                empleado_sel["id"], new_nombre, new_apellidos,
+                new_puesto, new_telefono
+            )
+            st.success("Empleado actualizado correctamente 💚")
+            st.rerun()
 
 
 # --------------------------------------------------
-# 4. ELIMINAR PERSONAL
+# 5. ELIMINAR EMPLEADO
 # --------------------------------------------------
-
 pink_box("🗑️ Eliminar Personal")
 
-#Se permite eliminar el empleado que haya sido seleccionado
-if len(empleados) > 0:
+if empleados:
     if st.button("Eliminar empleado seleccionado"):
-        try:
-            eliminar_empleado(empleado_sel["id"])
-            st.success("Empleado eliminado correctamente ❌")
-            st.rerun() #Refrescar la página para tener los nuevos valores
-        except Exception as e:
-            st.error(f"Error al eliminar empleado: {e}")
+        eliminar_empleado(empleado_sel["id"])
+        st.success("Empleado eliminado correctamente ❌")
+        st.rerun()
+
+
+# --------------------------------------------------
+# 6. CALENDARIO MENSUAL INTERACTIVO
+# --------------------------------------------------
+
+def mostrar_calendario_mensual(df, year, month):
+    cal = calendar.monthcalendar(year, month)
+
+    # Preparar datos
+    df["fecha"] = pd.to_datetime(df["fecha"])
+    df["day"] = df["fecha"].dt.day
+    df["hora"] = df["fecha"].dt.strftime("%H:%M")
+
+    eventos = df.groupby("day").apply(
+        lambda x: "<br>".join(
+            f"<b>{row['hora']}</b> — {row['mascota']} ({row['empleado']})<br>{row['motivo']}"
+            for _, row in x.iterrows()
+        )
+    ).to_dict()
+
+    # Crear lista plana
+    celdas = []
+    for semana in cal:
+        for dia in semana:
+            if dia == 0:
+                celdas.append("")
+            elif dia in eventos:
+                celdas.append(f"<b>{dia}</b><br><br>{eventos[dia]}")
+            else:
+                celdas.append(f"<b>{dia}</b>")
+
+    # Crear figura
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+            fill_color="#FFB7CE",
+            align="center",
+            font=dict(size=14)
+        ),
+        cells=dict(
+            values=[celdas[i::7] for i in range(7)],
+            fill_color="#FFE6EB",
+            align="left",
+            height=120,
+            font=dict(color="#4A4A4A", size=12),
+        )
+    )])
+
+    fig.update_layout(width=1000, height=900)
+    return fig
+
+
+# CALENDARIO INTERACTIVO
+pink_box("📆 Calendario Mensual de Citas")
+
+citas = obtener_citas()
+
+if citas:
+    df_citas = pd.DataFrame(citas)
+
+    # Estado inicial
+    if "cal_year" not in st.session_state:
+        st.session_state.cal_year = datetime.now().year
+    if "cal_month" not in st.session_state:
+        st.session_state.cal_month = datetime.now().month
+
+    colA, colB, colC = st.columns([2, 3, 2])
+
+    with colA:
+        if st.button("← Mes anterior"):
+            if st.session_state.cal_month == 1:
+                st.session_state.cal_month = 12
+                st.session_state.cal_year -= 1
+            else:
+                st.session_state.cal_month -= 1
+
+    with colC:
+        if st.button("Mes siguiente →"):
+            if st.session_state.cal_month == 12:
+                st.session_state.cal_month = 1
+                st.session_state.cal_year += 1
+            else:
+                st.session_state.cal_month += 1
+
+    year = st.session_state.cal_year
+    month = st.session_state.cal_month
+
+    st.markdown(
+        f"<h3 style='text-align:center;'>📅 {calendar.month_name[month]} {year}</h3>",
+        unsafe_allow_html=True,
+    )
+
+    fig_calendar = mostrar_calendario_mensual(df_citas, year, month)
+    st.plotly_chart(fig_calendar, use_container_width=True)
+
 else:
-    st.info("No hay empleados para eliminar.")
+    st.info("No hay citas registradas.")
