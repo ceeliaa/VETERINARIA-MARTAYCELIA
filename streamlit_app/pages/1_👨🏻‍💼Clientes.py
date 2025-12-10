@@ -30,6 +30,7 @@ st.set_page_config(page_title="Clientes", page_icon="🧍‍♂️")
 # ESTILOS (CSS)
 # --------------------------------------------------
 #Nosotras hemos decidido definir la apariencia de esta pestaña mediante el uso de css
+#Seguimos un protocolo de estilo para que nuestra página tenga un diseño parecido
 st.markdown("""
 <style>
 
