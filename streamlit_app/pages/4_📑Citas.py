@@ -93,13 +93,11 @@ def pink_box(title):
     )
 
 
-
 # --------------------------------------------------
 # CONEXIÓN A LA BASE DE DATOS
 # --------------------------------------------------
 
 db = DataBaseConnector(password="12345678")
-
 
 
 # --------------------------------------------------
@@ -151,7 +149,53 @@ def eliminar_cita(cita_id):
 
 
 # --------------------------------------------------
-# GRÁFICO INTERACTIVO — ESTADO DE LAS CITAS
+# DURACIONES DE CADA TIPO DE CITA
+# --------------------------------------------------
+
+duraciones = {
+    "Vacunación": 20,
+    "Vacuna antirrábica": 20,
+    "Revisión general": 30,
+    "Desparasitación": 15,
+    "Consulta dermatológica": 30,
+    "Consulta digestiva": 30,
+    "Urgencia": 40,
+    "Cirugía": 90,
+    "Control post-operatorio": 15,
+    "Otro": 20
+}
+
+
+# --------------------------------------------------
+# FUNCIÓN PARA COMPROBAR DISPONIBILIDAD DEL VETERINARIO
+# --------------------------------------------------
+
+def veterinario_disponible(empleado_id, fecha_inicio, duracion_minutos):
+    fecha_inicio = pd.to_datetime(fecha_inicio)
+    fecha_fin = fecha_inicio + pd.Timedelta(minutes=duracion_minutos)
+
+    query = """
+        SELECT fecha, motivo
+        FROM citas
+        WHERE empleado_id = %s
+    """
+
+    citas_vet = db.ejecutar_query(query, (empleado_id,))
+
+    for c in citas_vet:
+        inicio_exist = pd.to_datetime(c["fecha"])
+        fin_exist = inicio_exist + pd.Timedelta(minutes=duraciones.get(c["motivo"], 20))
+
+        # ¿Solapan?
+        if fecha_inicio < fin_exist and fecha_fin > inicio_exist:
+            return False, c["motivo"], inicio_exist, fin_exist
+
+    return True, None, None, None
+
+
+
+# --------------------------------------------------
+# GRÁFICOS INTERACTIVOS
 # --------------------------------------------------
 
 def grafico_citas_por_estado(citas):
@@ -175,34 +219,6 @@ def grafico_citas_por_estado(citas):
 
     st.plotly_chart(fig, use_container_width=True)
 
-
-
-
-
-
-# --------------------------------------------------
-# 1. LISTA DE CITAS
-# --------------------------------------------------
-
-citas = obtener_citas()
-
-pink_box("📋 Lista de Citas")
-st.dataframe(citas, use_container_width=True)
-
-
-# --------------------------------------------------
-# 1B. GRÁFICO
-# --------------------------------------------------
-
-pink_box("📊 Estado de las Citas")
-grafico_citas_por_estado(citas)
-
-
-
-
-# --------------------------------------------------
-# GRÁFICO INTERACTIVO — CITAS POR MOTIVO
-# --------------------------------------------------
 
 def grafico_citas_por_motivo(citas):
     if not citas:
@@ -234,30 +250,36 @@ def grafico_citas_por_motivo(citas):
 
     st.plotly_chart(fig, use_container_width=True)
 
+
+
+# --------------------------------------------------
+# 1. LISTA DE CITAS
+# --------------------------------------------------
+
+citas = obtener_citas()
+pink_box("📋 Lista de Citas")
+st.dataframe(citas, use_container_width=True)
+
+# --------------------------------------------------
+# GRÁFICOS
+# --------------------------------------------------
+
+pink_box("📊 Estado de las Citas")
+grafico_citas_por_estado(citas)
+
 pink_box("📊 Motivos más frecuentes de las Citas")
 grafico_citas_por_motivo(citas)
 
 
+
 # --------------------------------------------------
-# 2. AÑADIR UNA NUEVA CITA
+# 2. AÑADIR NUEVA CITA (CON COMPROBACIÓN DE DISPONIBILIDAD)
 # --------------------------------------------------
 
 mascotas = obtener_mascotas()
 empleados = obtener_empleados()
 
-motivos_posibles = [
-    "Vacunación",
-    "Vacuna antirrábica",
-    "Revisión general",
-    "Desparasitación",
-    "Consulta dermatológica",
-    "Consulta digestiva",
-    "Urgencia",
-    "Cirugía",
-    "Control post-operatorio",
-    "Otro"
-]
-
+motivos_posibles = list(duraciones.keys())
 estados_posibles = ["Pendiente", "Realizada", "Cancelada"]
 
 pink_box("➕ Añadir Cita 🐶💉")
@@ -283,13 +305,24 @@ with st.form("form_anadir_cita"):
         estado = st.selectbox("Estado", estados_posibles)
 
     if st.form_submit_button("Añadir Cita"):
+
         fecha_completa = f"{fecha} {hora}"
-        try:
-            insertar_cita(fecha_completa, motivo, mascota_id, empleado_id, estado)
-            st.success("Cita añadida correctamente 🩷")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
+        duracion = duraciones.get(motivo, 20)
+
+        disponible, motivo_oc, inicio_oc, fin_oc = veterinario_disponible(empleado_id, fecha_completa, duracion)
+
+        if not disponible:
+            st.error(
+                f"❌ El veterinario ya tiene una cita ({motivo_oc}) entre "
+                f"{inicio_oc.strftime('%H:%M')} y {fin_oc.strftime('%H:%M')}"
+            )
+        else:
+            try:
+                insertar_cita(fecha_completa, motivo, mascota_id, empleado_id, estado)
+                st.success("Cita añadida correctamente 🩷")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error: {e}")
 
 
 
@@ -319,17 +352,13 @@ if len(citas) > 0:
             nueva_fecha = st.date_input("Fecha", value=fecha_original)
             nueva_hora = st.time_input("Hora", value=hora_original)
 
-            motivo_actual = cita_sel["motivo"]
-            index_motivo = motivos_posibles.index(motivo_actual) if motivo_actual in motivos_posibles else 0
+            index_motivo = motivos_posibles.index(cita_sel["motivo"]) if cita_sel["motivo"] in motivos_posibles else 0
             nuevo_motivo = st.selectbox("Motivo", motivos_posibles, index=index_motivo)
 
-
         with col2:
-            mascota_dict = {f"{m['id']} - {m['nombre']}": m["id"] for m in mascotas}
             mascota_edit = st.selectbox("Mascota", list(mascota_dict.keys()))
             nueva_mascota_id = mascota_dict[mascota_edit]
 
-            empleado_dict = {f"{e['id']} - {e['nombre']} {e['apellidos']}": e["id"] for e in empleados}
             empleado_edit = st.selectbox("Veterinario", list(empleado_dict.keys()))
             nuevo_empleado_id = empleado_dict[empleado_edit]
 
@@ -341,13 +370,19 @@ if len(citas) > 0:
 
         if st.form_submit_button("Guardar cambios"):
             nueva_fecha_completa = f"{nueva_fecha} {nueva_hora}"
+
             try:
                 actualizar_cita(
-                    cita_sel["id"], nueva_fecha_completa, nuevo_motivo,
-                    nueva_mascota_id, nuevo_empleado_id, nuevo_estado
+                    cita_sel["id"],
+                    nueva_fecha_completa,
+                    nuevo_motivo,
+                    nueva_mascota_id,
+                    nuevo_empleado_id,
+                    nuevo_estado
                 )
                 st.success("Cita actualizada correctamente 💚")
                 st.rerun()
+
             except Exception as e:
                 st.error(f"Error: {e}")
 

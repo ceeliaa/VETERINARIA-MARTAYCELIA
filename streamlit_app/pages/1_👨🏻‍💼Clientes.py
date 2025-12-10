@@ -3,11 +3,11 @@ import os
 
 # Añadimos la carpeta raíz del proyecto al path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-"""
-os.path.abspath(__file__) → Obtiene la ruta absoluta del archivo
-os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
-Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
-"""
+
+#os.path.abspath(__file__) → Obtiene la ruta absoluta del archivo
+#os.path.dirname(ruta) → Obtiene la carpeta que contiene el archivo
+#Por lo tanto, llamando 3 veces añadimos la carpeta raíz del proyecto al path
+
 sys.path.append(ROOT_DIR)
 #Agregamos la carpeta raiz ROOT_DIR al path, de esta forma Python busca módulos dentro de la carpeta raiz del proyecto
 
@@ -159,9 +159,9 @@ def eliminar_cliente(cliente_id):
     db.ejecutar_query(query, (cliente_id,), fetch=False)
 
 
-"""
-PARTE MÁS VISUAL DEL TRABAJO (despues del titulo)
-"""
+
+#PARTE MÁS VISUAL DEL TRABAJO (despues del titulo)
+
 # --------------------------------------------------
 # 1. TABLA con la LISTA de CLIENTES
 # --------------------------------------------------
