@@ -288,6 +288,7 @@ query_mascotas = """
 datos_mascotas = db.ejecutar_query(query_mascotas)
 df_mascotas = pd.DataFrame(datos_mascotas)
 
+##Creamos un gráfico de barras, las barras tendrán distintos colores dependiendo del número de mascotas
 fig1 = px.bar(
     df_mascotas,
     x="nombre",
@@ -304,7 +305,7 @@ st.plotly_chart(fig1, use_container_width=True)
 
 
 # --------------------------------------------------
-# 6. GRÁFICO — Clientes añadidos por mes
+# 6. GRÁFICO sobre los CLIENTES añadidos por MES
 # --------------------------------------------------
 
 pink_box("📈 Clientes Nuevos por Mes")
@@ -316,15 +317,17 @@ query_clientes_mes = """
     GROUP BY mes
     ORDER BY mes;
 """
-
+#Ejecutamos la query donde se agrupan por mes los clientes añadidos por entonces
+#Cabe recalcar que como se creo la base de datos en diciembre y los primeros añadidos han sido por ese entonces, solo habra valores en ese mes por ahora
 datos_clientes_mes = db.ejecutar_query(query_clientes_mes)
 df_mes = pd.DataFrame(datos_clientes_mes)
 
+#Creamos un gráfico de linea interactivo que muestre la evolución mensual de clientes
 fig2 = px.line(
     df_mes,
     x="mes",
     y="cantidad",
-    markers=True,
+    markers=True, #markers=True añade puntos sobre la línea
     title="Clientes añadidos por mes"
 )
 
